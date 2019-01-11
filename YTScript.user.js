@@ -19,6 +19,7 @@
         let styles = document.createElement("link");
         styles.rel = "stylesheet";
         styles.href = "https://gist.github.com/michi-at/3fbee92a72756e170a2d86c2fa5f88da/raw/YTStyles.min.css"
+        document.head.appendChild(styles);
 
         class ComponentManager {
             constructor() {
