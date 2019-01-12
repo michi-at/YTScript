@@ -33,6 +33,21 @@
   outline: none;
 }
 
+.ytscript-slider-fullscreen {
+  margin-top: -4px;
+  height: 8px;
+}
+
+.ytscript-slider-fullscreen .ui-slider-range-min {
+  height: 8px;
+}
+
+.ytscript-slider-fullscreen .ui-slider-handle {
+  width: 18px;
+  height: 18px;
+  margin-top: -6px;
+}
+
 .ytscript-slider-container {
   width: 145px;
   height: 100%;

@@ -33,7 +33,21 @@ $accent: #db3838;
             margin-top: -3px;
             cursor: pointer;
             outline: none;
-        
+        }
+
+        &-fullscreen {
+            margin-top: -4px;
+            height: 8px;
+
+            .ui-slider-range-min {
+                height: 8px;
+            }
+
+            .ui-slider-handle {
+                width: 18px;
+                height: 18px;
+                margin-top: -6px;
+            }
         }
 
         &-container {

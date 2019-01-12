@@ -92,6 +92,29 @@
             }, {});
         }
     }
+
+    class Slider {
+        constructor(target, options) {
+            target.className = "ytscript-slider-container";
+            this.slider = document.createElement("div");
+            this.slider.className = "ytscript-slider";
+            target.appendChild(this.slider);
+            $(this.slider).slider(options);
+
+
+            this.FullscreenChangeListener = this.FullscreenChange.bind(this);
+            document.addEventListener("fullscreenchange", this.FullscreenChangeListener);
+        }
+
+        FullscreenChange() {
+            if (document.fullscreenElement) {
+                this.slider.classList.add("ytscript-slider-fullscreen");
+            }
+            else {
+                this.slider.classList.remove("ytscript-slider-fullscreen");
+            }
+        }
+    }
     /* End of Utils */
 
 
@@ -191,11 +214,7 @@
                     ".ytp-chrome-controls .ytp-left-controls"))) {
 
                 let sliderContainer = document.createElement("div");
-                sliderContainer.className = "ytscript-slider-container";
-                let slider = document.createElement("div");
-                slider.className = "ytscript-slider";
-                sliderContainer.appendChild(slider);
-                $(slider).slider({
+                this.slider = new Slider(sliderContainer, {
                     min: 0,
                     max: 7,
                     value: 1,
