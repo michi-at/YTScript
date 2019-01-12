@@ -43,7 +43,9 @@
 
         Initialize() {
             for (const [, value] of Object.entries(this.events)) {
-                value.eventTarget.addEventListener(value.eventName, value.eventListener, value.useCapture);
+                if (value.eventListener) {
+                    value.eventTarget.addEventListener(value.eventName, value.eventListener, value.useCapture);
+                }
             }
 
             return this;
@@ -62,7 +64,7 @@
         WatchComponentConfig(component) {
             this.events[component.name] = {
                 eventTarget: component,
-                eventName: component.events.onConfigSave,
+                eventName: component.events.onConfigSave.eventName,
                 eventListener: this.ComponentConfigSave.bind(this),
                 useCapture: false
             }
@@ -139,7 +141,9 @@
 
         Initialize() {
             for (const [, value] of Object.entries(this.events)) {
-                value.eventTarget.addEventListener(value.eventName, value.eventListener, value.useCapture);
+                if (value.eventListener) {
+                    value.eventTarget.addEventListener(value.eventName, value.eventListener, value.useCapture);
+                }
             }
 
             return this;
@@ -155,19 +159,69 @@
             super();
 
             this.name = this.constructor.name;
+
             this.events = {
-                onConfigSave: "ConfigSaved",
-                onLoad: "load",
-                onComponentLoad: ""
+                onConfigSave: {
+                    eventTarget: this,
+                    eventName: "ConfigSaved",
+                    eventListener: undefined,
+                    useCapture: false
+                },
+                onLoad: {
+                    eventTarget: document.documentElement,
+                    eventName: "load",
+                    eventListener: this.Load.bind(this),
+                    useCapture: true
+                },
+                onListenerRemove: {
+                    eventTarget: this,
+                    eventName: "ListenerRemove",
+                    eventListener: this.StopListening.bind(this),
+                    useCapture: false
+                }
             };
-            this.eventListeners = {};
             this.status = {
                 parent: this,
+                _isLoaded: false
             };
+            Object.defineProperty(this.status, "isLoaded", {
+                get: function () {
+                    return this._isLoaded;
+                },
+                set: function (value) {
+                    if (typeof value === "boolean") {
+                        this._isLoaded = value;
+                        if (value) {
+                            this.parent.dispatchEvent(
+                                new CustomEvent(
+                                    this.parent.events.onListenerRemove.eventName, {
+                                        detail: this.parent.events.onLoad
+                                    }
+                                )
+                            );
+                        }
+                    }
+                }
+            });
+        }
+
+        StopListening(event) {
+            let info = event.detail;
+            info.eventTarget.removeEventListener(info.eventName, info.eventListener, info.useCapture);
+        }
+
+        Load() {
+
         }
 
         Initialize() {
+            for (const [, value] of Object.entries(this.events)) {
+                if (value.eventListener) {
+                    value.eventTarget.addEventListener(value.eventName, value.eventListener, value.useCapture);
+                }
+            }
 
+            return this;
         }
 
         LoadConfig(data) {
@@ -187,7 +241,7 @@
                 oldValue: oldValue,
                 newValue: newValue
             }
-            let event = new CustomEvent(this.events.onConfigSave, {
+            let event = new CustomEvent(this.events.onConfigSave.eventName, {
                 detail: data
             })
             this.dispatchEvent(event);
@@ -198,8 +252,12 @@
         constructor() {
             super();
 
-            this.events.onListenerRemove = "ListenerRemove";
-
+            this.events.onUILoad = {
+                eventTarget: document.documentElement,
+                eventName: "load",
+                eventListener: this.LoadUI.bind(this),
+                useCapture: true
+            }
             this.status._isUILoaded = false;
             Object.defineProperty(this.status, "isUILoaded", {
                 get: function () {
@@ -211,12 +269,8 @@
                         if (value) {
                             this.parent.dispatchEvent(
                                 new CustomEvent(
-                                    this.parent.events.onListenerRemove, {
-                                        detail: {   
-                                            event: this.parent.events.onLoad,
-                                            listener: this.parent.eventListeners.LoadListener,
-                                            useCapture: true
-                                        }
+                                    this.parent.events.onListenerRemove.eventName, {
+                                        detail: this.parent.events.onUILoad
                                     }
                                 )
                             );
@@ -224,21 +278,10 @@
                     }
                 }
             });
-
-            this.eventListeners.LoadListener = this.InitializeUI.bind(this);
-            this.eventListeners.RemoveListener = this.StopListening.bind(this);
-            document.documentElement.addEventListener(this.events.onLoad, this.eventListeners.LoadListener, true);
-            this.addEventListener(this.events.onListenerRemove, this.eventListeners.RemoveListener);
         }
 
-        InitializeUI() {
+        LoadUI() {
 
-        }
-
-        StopListening(event) {
-            document.documentElement.removeEventListener(event.detail.event,
-                                                         event.detail.listener,
-                                                         event.detail.useCapture);
         }
     }
 
@@ -247,7 +290,14 @@
             super();
         }
 
-        InitializeUI() {
+        Load() {
+
+            
+            this.status.isLoaded = true;
+            console.info(`${this.name} has been loaded.`);
+        }
+
+        LoadUI() {
             let injectionTarget;
             if ((injectionTarget = document.querySelector("ytd-player .ytp-chrome-bottom " +
                     ".ytp-chrome-controls .ytp-left-controls"))) {
@@ -266,6 +316,7 @@
                 injectionTarget.appendChild(sliderContainer);
 
                 this.status.isUILoaded = true;
+                console.info(`${this.name}'s UI has been loaded.`);
             }
         }
     }
@@ -273,7 +324,6 @@
 
 
 
-    manager.AddComponent(new VolumeControl());
-
-    manager.Initialize();
+    manager.AddComponent(new VolumeControl().Initialize())
+           .Initialize();
 })();
