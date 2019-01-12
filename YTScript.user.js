@@ -48,6 +48,10 @@
                 }
             }
 
+            for (const [, value] of Object.entries(this.components)) {
+                value.Initialize();
+            }
+
             return this;
         }
 
@@ -312,7 +316,7 @@
                     slide: function(event, ui) {
                         console.log(ui.value);
                     }
-                });
+                }).Initialize();
                 injectionTarget.appendChild(sliderContainer);
 
                 this.status.isUILoaded = true;
@@ -324,6 +328,6 @@
 
 
 
-    manager.AddComponent(new VolumeControl().Initialize())
+    manager.AddComponent(new VolumeControl())
            .Initialize();
 })();
