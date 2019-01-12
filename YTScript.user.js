@@ -16,10 +16,11 @@
     (function () {
         "use strict";
 
-        let styles = document.createElement("link");
-        styles.rel = "stylesheet";
-        styles.href = "https://gist.github.com/michi-at/3fbee92a72756e170a2d86c2fa5f88da/raw/YTStyles.min.css"
-        document.head.appendChild(styles);
+        let link  = document.createElement("link");
+        link.rel  = "stylesheet";
+        link.type = "text/css";
+        link.href = "https://filebin.net/zwk9mxyy8qez9jmb/YTStyles.min.css?t=lj6j3c6n";
+        document.head.appendChild(link);
 
         class ComponentManager {
             constructor() {
