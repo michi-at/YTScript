@@ -33,26 +33,43 @@
             this.components = {};
             this.info = GM_info;
             this.config = this.LoadConfig();
+            this.events = {};
+        }
+
+        LoadConfig() {
+            let config = JSON.parse(GM_getValue(this.info.script.name) || "null") || {};
+            return config;
         }
 
         Initialize() {
+            for (const [, value] of Object.entries(this.events)) {
+                value.eventTarget.addEventListener(value.eventName, value.eventListener, value.useCapture);
+            }
 
+            return this;
         }
 
         AddComponent(component) {
             this.components[component.name] = component;
             this.config[component.name] = this.config[component.name] || {};
             component.LoadConfig(this.config[component.name]);
-            component.addEventListener(component.events.onConfigSave, this.OnComponentConfigSave);
+
+            this.WatchComponentConfig(component);
+
+            return this;
         }
 
-        OnComponentConfigSave(event) {
+        WatchComponentConfig(component) {
+            this.events[component.name] = {
+                eventTarget: component,
+                eventName: component.events.onConfigSave,
+                eventListener: this.ComponentConfigSave.bind(this),
+                useCapture: false
+            }
+        }
+
+        ComponentConfigSave(event) {
             this.SaveConfig();
-        }
-
-        LoadConfig() {
-            let config = JSON.parse(GM_getValue(this.info.script.name) || "null") || {};
-            return config;
         }
 
         EditConfig(componentName, value) {
@@ -101,9 +118,14 @@
             target.appendChild(this.slider);
             $(this.slider).slider(options);
 
-
-            this.FullscreenChangeListener = this.FullscreenChange.bind(this);
-            document.addEventListener("fullscreenchange", this.FullscreenChangeListener);
+            this.events = {
+                onFullscreenChange: {
+                    eventTarget: document,
+                    eventName: "fullscreenchange",
+                    eventListener: this.FullscreenChange.bind(this),
+                    useCapture: false
+                }
+            }
         }
 
         FullscreenChange() {
@@ -113,6 +135,14 @@
             else {
                 this.slider.classList.remove("ytscript-slider-fullscreen");
             }
+        }
+
+        Initialize() {
+            for (const [, value] of Object.entries(this.events)) {
+                value.eventTarget.addEventListener(value.eventName, value.eventListener, value.useCapture);
+            }
+
+            return this;
         }
     }
     /* End of Utils */
@@ -127,12 +157,17 @@
             this.name = this.constructor.name;
             this.events = {
                 onConfigSave: "ConfigSaved",
-                onLoad: "load"
+                onLoad: "load",
+                onComponentLoad: ""
             };
             this.eventListeners = {};
             this.status = {
-                parent: this
+                parent: this,
             };
+        }
+
+        Initialize() {
+
         }
 
         LoadConfig(data) {
@@ -177,7 +212,11 @@
                             this.parent.dispatchEvent(
                                 new CustomEvent(
                                     this.parent.events.onListenerRemove, {
-                                        detail: this.parent.events.onLoad
+                                        detail: {   
+                                            event: this.parent.events.onLoad,
+                                            listener: this.parent.eventListeners.LoadListener,
+                                            useCapture: true
+                                        }
                                     }
                                 )
                             );
@@ -197,9 +236,9 @@
         }
 
         StopListening(event) {
-            if (event.detail === this.events.onLoad) {
-                document.documentElement.removeEventListener(this.events.onLoad, this.eventListeners.LoadListener, true);
-            }
+            document.documentElement.removeEventListener(event.detail.event,
+                                                         event.detail.listener,
+                                                         event.detail.useCapture);
         }
     }
 
