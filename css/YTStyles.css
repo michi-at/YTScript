@@ -1,7 +1,42 @@
 /* Styles */
 .ytscript-slider {
-  height: 100%;
+  position: absolute;
+  left: 24px;
   margin: 0;
-  padding: 0;
-  margin-left: 10px;
+  height: 4px;
+  width: 125px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 15px;
+  top: 50%;
+  margin-top: -3px;
+}
+
+.ytscript-slider .ui-slider-range-min {
+  height: 4px;
+  width: 125px;
+  position: absolute;
+  background: #db3838;
+  border: none;
+  border-radius: 10px;
+  outline: none;
+}
+
+.ytscript-slider .ui-slider-handle {
+  width: 10px;
+  height: 10px;
+  border-radius: 20px;
+  background: #FFF;
+  position: absolute;
+  margin-left: -8px;
+  margin-top: -3px;
+  cursor: pointer;
+  outline: none;
+}
+
+.ytscript-slider-container {
+  width: 145px;
+  height: 100%;
+  display: inline-block;
+  position: relative;
+  margin: 0 auto;
 }
