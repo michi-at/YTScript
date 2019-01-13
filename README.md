@@ -6,3 +6,10 @@ YouTube player enhancement for Chrome&amp;Tampermonkey extension.
 - [ ] Video start/end points with slider :frowning:
 - [ ] Load videos without changing url for keeping browsing history clean (? ? ?) :astonished:
 - [ ] :fire: Cross-browser/extension compatibility :fire: :scream:
+
+## TODO
+- Complete the tasks above
+- Write clean code
+- Fix bugs
+- Write clean code
+- Name the script :sweat_smile:
