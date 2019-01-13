@@ -9,7 +9,4 @@ YouTube player enhancement for Chrome&amp;Tampermonkey extension.
 
 ## :wrench: TODO :wrench:
 - Implement the features above
-- Write clean code
-- Fix bugs
-- Write clean code
 - Name the script :sweat_smile:
