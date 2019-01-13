@@ -2,7 +2,7 @@
 // @name         YTScript
 // @description  YouTube player enhancement
 // @author       michi-at
-// @version      0.0.1
+// @version      0.1.0
 // @updateURL    https://github.com/michi-at/YTScript/raw/master/YTScript.meta.js
 // @downloadURL  https://github.com/michi-at/YTScript/raw/master/YTScript.user.js
 // @match        *://www.youtube.com/*
@@ -26,7 +26,11 @@
     link.href = "https://michi-at.github.io/css/YTStyles.min.css";
     document.head.appendChild(link);
 
+    const DEBUG = false;
 
+    function Log(text) {
+        console.info(`${GM_info.script.name}: ${text}`);
+    }
 
     class ComponentManager {
         constructor() {
@@ -59,7 +63,6 @@
             this.components[component.name] = component;
             this.config[component.name] = this.config[component.name] || {};
             component.LoadConfig(this.config[component.name]);
-
             this.WatchComponentConfig(component);
 
             return this;
@@ -119,10 +122,10 @@
     class Slider {
         constructor(target, options) {
             target.className = "ytscript-slider-container";
-            this.slider = document.createElement("div");
-            this.slider.className = "ytscript-slider";
-            target.appendChild(this.slider);
-            $(this.slider).slider(options);
+            this.api = document.createElement("div");
+            this.api.className = "ytscript-slider";
+            target.appendChild(this.api);
+            $(this.api).slider(options);
 
             this.events = {
                 onFullscreenChange: {
@@ -136,10 +139,9 @@
 
         FullscreenChange() {
             if (document.fullscreenElement) {
-                this.slider.classList.add("ytscript-slider-fullscreen");
-            }
-            else {
-                this.slider.classList.remove("ytscript-slider-fullscreen");
+                this.api.classList.add("ytscript-slider-fullscreen");
+            } else {
+                this.api.classList.remove("ytscript-slider-fullscreen");
             }
         }
 
@@ -182,6 +184,18 @@
                     eventName: "ListenerRemove",
                     eventListener: this.StopListening.bind(this),
                     useCapture: false
+                },
+                onYtNavigateStart: {
+                    eventTarget: window,
+                    eventName: "yt-navigate-start",
+                    eventListener: this.YtNavigateStarted.bind(this),
+                    useCapture: false
+                },
+                onYtNavigateFinish: {
+                    eventTarget: window,
+                    eventName: "yt-navigate-finish",
+                    eventListener: this.YtNavigateFinished.bind(this),
+                    useCapture: false
                 }
             };
             this.status = {
@@ -209,12 +223,20 @@
             });
         }
 
+        Load() {
+
+        }
+
         StopListening(event) {
             let info = event.detail;
             info.eventTarget.removeEventListener(info.eventName, info.eventListener, info.useCapture);
         }
 
-        Load() {
+        YtNavigateStarted(event) {
+
+        }
+
+        YtNavigateFinished(event) {
 
         }
 
@@ -226,6 +248,20 @@
             }
 
             return this;
+        }
+
+        GetLocation() {
+            let videoId, playlistId, location = window.location;
+
+            [, videoId] = /(?:\?|&)v=([a-zA-Z0-9\-\_]+)/g.exec(location.search) || [, ""];
+            [, playlistId] = /(?:\?|&)list=([a-zA-Z0-9\-\_]+)/g.exec(location.search)|| [, ""];
+
+            return {
+                pageType: location.pathname.length === 1 ? "browse" : location.pathname.substring(1),
+                url: location.pathname + location.search,
+                videoId: videoId,
+                playlistId: playlistId
+            };
         }
 
         LoadConfig(data) {
@@ -247,7 +283,7 @@
             }
             let event = new CustomEvent(this.events.onConfigSave.eventName, {
                 detail: data
-            })
+            });
             this.dispatchEvent(event);
         }
     }
@@ -292,36 +328,80 @@
     class VolumeControl extends UIComponent {
         constructor() {
             super();
+
+            this.location = this.GetLocation();
         }
 
         Load() {
+            let videoElement;
+            if ((videoElement = document.getElementsByClassName("html5-main-video")[0])) {
+                let audioContext = new AudioContext();
+                let source = audioContext.createMediaElementSource(videoElement);
+                let gainNode = audioContext.createGain();
+                this.gain = gainNode.gain;
 
-            
-            this.status.isLoaded = true;
-            console.info(`${this.name} has been loaded.`);
+                this.location = this.location || GetLocation();
+
+                let videoSettings = this.config.list[this.location.videoId] || { volume: 1 };
+                this.gain.value = videoSettings.volume;
+                gainNode.connect(audioContext.destination);
+                source.connect(gainNode);
+            }
+
+            if (this.gain) {
+                this.status.isLoaded = true;
+                if (DEBUG) {
+                    Log(`${this.name} has been loaded.`);
+                }
+            }
         }
 
         LoadUI() {
             let injectionTarget;
             if ((injectionTarget = document.querySelector("ytd-player .ytp-chrome-bottom " +
-                    ".ytp-chrome-controls .ytp-left-controls"))) {
-
+                    ".ytp-chrome-controls .ytp-left-controls")) && !this.slider) {
                 let sliderContainer = document.createElement("div");
+
+                let videoSettings = this.config.list[this.location.videoId] || { volume: 1 };
+
                 this.slider = new Slider(sliderContainer, {
                     min: 0,
-                    max: 7,
-                    value: 1,
+                    max: 5,
+                    value: videoSettings.volume,
                     range: "min",
                     step: 0.05,
-                    slide: function(event, ui) {
-                        console.log(ui.value);
-                    }
+                    slide: this.ChangeVolume.bind(this)
                 }).Initialize();
                 injectionTarget.appendChild(sliderContainer);
-
-                this.status.isUILoaded = true;
-                console.info(`${this.name}'s UI has been loaded.`);
             }
+
+            if (this.slider) {
+                this.status.isUILoaded = true;
+                if (DEBUG) {
+                    Log(`${this.name}'s UI has been loaded.`);
+                }
+            }
+        }
+
+        ChangeVolume(event, ui) {
+            let destination = {};
+            destination[this.location.videoId] = { volume: ui.value };
+            this.gain.value = ui.value;
+            this.EditConfig("list", {...this.config.list, ...destination });
+        }
+
+        YtNavigateStarted(event) {
+            if (event.detail.pageType === "watch") {
+                let videoSettings = this.config.list[event.detail.endpoint.watchEndpoint.videoId] || { volume: 1 };
+                this.gain.value = videoSettings.volume;
+                $(this.slider.api).slider("value", this.gain.value);
+            }
+        }
+
+        LoadConfig(data) {
+            super.LoadConfig(data);
+
+            this.EditConfig("list", this.config.list || {});
         }
     }
     /* End of Components */
@@ -329,5 +409,5 @@
 
 
     manager.AddComponent(new VolumeControl())
-           .Initialize();
+        .Initialize();
 })();
