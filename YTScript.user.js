@@ -254,7 +254,7 @@
             let videoId, playlistId, location = window.location;
 
             [, videoId] = /(?:\?|&)v=([a-zA-Z0-9\-\_]+)/g.exec(location.search) || [, ""];
-            [, playlistId] = /(?:\?|&)list=([a-zA-Z0-9\-\_]+)/g.exec(location.search)|| [, ""];
+            [, playlistId] = /(?:\?|&)list=([a-zA-Z0-9\-\_]+)/g.exec(location.search) || [, ""];
 
             return {
                 pageType: location.pathname.length === 1 ? "browse" : location.pathname.substring(1),
@@ -342,7 +342,9 @@
 
                 this.location = this.location || GetLocation();
 
-                let videoSettings = this.config.list[this.location.videoId] || { volume: 1 };
+                let videoSettings = this.config.list[this.location.videoId] || {
+                    volume: 1
+                };
                 this.gain.value = videoSettings.volume;
                 gainNode.connect(audioContext.destination);
                 source.connect(gainNode);
@@ -362,7 +364,9 @@
                     ".ytp-chrome-controls .ytp-left-controls")) && !this.slider) {
                 let sliderContainer = document.createElement("div");
 
-                let videoSettings = this.config.list[this.location.videoId] || { volume: 1 };
+                let videoSettings = this.config.list[this.location.videoId] || {
+                    volume: 1
+                };
 
                 this.slider = new Slider(sliderContainer, {
                     min: 0,
@@ -385,14 +389,20 @@
 
         ChangeVolume(event, ui) {
             let destination = {};
-            destination[this.location.videoId] = { volume: ui.value };
+            destination[this.location.videoId] = {
+                volume: ui.value
+            };
             this.gain.value = ui.value;
-            this.EditConfig("list", {...this.config.list, ...destination });
+            this.EditConfig("list", { ...this.config.list,
+                ...destination
+            });
         }
 
         YtNavigateStarted(event) {
             if (event.detail.pageType === "watch") {
-                let videoSettings = this.config.list[event.detail.endpoint.watchEndpoint.videoId] || { volume: 1 };
+                let videoSettings = this.config.list[event.detail.endpoint.watchEndpoint.videoId] || {
+                    volume: 1
+                };
                 this.gain.value = videoSettings.volume;
                 $(this.slider.api).slider("value", this.gain.value);
             }
