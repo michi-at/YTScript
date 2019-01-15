@@ -2,7 +2,7 @@
 // @name         YTScript
 // @description  YouTube player enhancement
 // @author       michi-at
-// @version      0.1.0
+// @version      0.1.1
 // @updateURL    https://github.com/michi-at/YTScript/raw/master/YTScript.meta.js
 // @downloadURL  https://github.com/michi-at/YTScript/raw/master/YTScript.user.js
 // @match        *://www.youtube.com/*
@@ -18,6 +18,10 @@
 (function () {
     "use strict";
 
+    const DEBUG = false;
+
+
+
     let link = document.createElement("link");
     link.rel = "stylesheet";
     link.type = "text/css";
@@ -26,7 +30,7 @@
     link.href = "https://michi-at.github.io/css/YTStyles.min.css";
     document.head.appendChild(link);
 
-    const DEBUG = false;
+
 
     function Log(text) {
         console.info(`${GM_info.script.name}: ${text}`);
@@ -126,6 +130,11 @@
             this.api.className = "ytscript-slider";
             target.appendChild(this.api);
             $(this.api).slider(options);
+
+            this.api.children[1].setAttribute("tooltip", options.value.toString());
+            $(this.api).on("slide", function (event, ui) {
+                this.children[1].setAttribute("tooltip", ui.value);
+            });
 
             this.events = {
                 onFullscreenChange: {
@@ -388,13 +397,14 @@
         }
 
         ChangeVolume(event, ui) {
-            let destination = {};
-            destination[this.location.videoId] = {
+            let newList = {};
+            newList[this.location.videoId] = {
                 volume: ui.value
             };
             this.gain.value = ui.value;
-            this.EditConfig("list", { ...this.config.list,
-                ...destination
+            this.EditConfig("list", {
+                ...this.config.list,
+                ...newList
             });
         }
 
@@ -413,11 +423,15 @@
 
             this.EditConfig("list", this.config.list || {});
         }
+
+        ClearConfig() {
+            this.EditConfig("list", {});
+        }
     }
     /* End of Components */
 
 
 
     manager.AddComponent(new VolumeControl())
-        .Initialize();
+           .Initialize();
 })();

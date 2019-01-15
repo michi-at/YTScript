@@ -1,4 +1,5 @@
 $accent: #db3838;
+
 /* Styles */
 .ytscript {
 
@@ -12,7 +13,7 @@ $accent: #db3838;
         border-radius: 15px;
         top: 50%;
         margin-top: -3px;
-        
+
         .ui-slider-range-min {
             height: 4px;
             width: 125px;
@@ -22,15 +23,15 @@ $accent: #db3838;
             border-radius: 10px;
             outline: none;
         }
-        
+
         .ui-slider-handle {
-            width: 10px;
-            height: 10px;
+            width: 13px;
+            height: 13px;
             border-radius: 20px;
             background: #FFF;
             position: absolute;
             margin-left: -8px;
-            margin-top: -3px;
+            margin-top: -5px;
             cursor: pointer;
             outline: none;
         }
@@ -59,4 +60,125 @@ $accent: #db3838;
             //top: 80px;
         }
     }
+}
+
+/* START TOOLTIP STYLES */
+[tooltip] {
+    position: relative;
+}
+
+/* Applies to all tooltips */
+[tooltip] {
+
+    &::before,
+    &::after {
+        text-transform: none;
+        font-size: 14px;
+        line-height: 1;
+        user-select: none;
+        pointer-events: none;
+        position: absolute;
+        display: none;
+        opacity: 0;
+    }
+
+    &::before {
+        content: '';
+        border: 5px solid transparent;
+        z-index: 1001;
+    }
+
+    &::after {
+        content: attr(tooltip);
+        font-family: Helvetica, sans-serif;
+        text-align: center;
+        min-width: 3em;
+        max-width: 21em;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        padding: 7px 0px;
+        border-radius: .3ch;
+        box-shadow: 0 1em 2em -.5em rgba(0, 0, 0, 0.35);
+        background: #333;
+        color: #fff;
+        z-index: 1000;
+    }
+
+    /* FLOW: UP */
+    &:not([flow])::before,
+    &[flow^="up"]::before {
+        bottom: 100%;
+        border-bottom-width: 0;
+        border-top-color: #333;
+    }
+
+    &:not([flow])::after,
+    &[flow^="up"]::after {
+        bottom: calc(100% + 5px);
+    }
+
+    &:not([flow])::before,
+    &:not([flow])::after,
+    &[flow^="up"]::before,
+    &[flow^="up"]::after {
+        left: 50%;
+        transform: translate(-50%, -.5em);
+    }
+
+    /* FLOW: DOWN */
+    &[flow^="down"]::before {
+        top: 100%;
+        border-top-width: 0;
+        border-bottom-color: #333;
+    }
+
+    &[flow^="down"]::after {
+        top: calc(100% + 5px);
+    }
+
+    &[flow^="down"]::before,
+    &[flow^="down"]::after {
+        left: 50%;
+        transform: translate(-50%, .5em);
+    }
+
+}
+
+/* don't show empty tooltips */
+[tooltip=''] {
+
+    &::before,
+    &::after {
+        display: none !important;
+    }
+}
+
+@keyframes tooltips-vert {
+    to {
+        opacity: .9;
+        transform: translate(-50%, 0);
+    }
+}
+
+/* Make the tooltips respond to hover and slide event*/
+[tooltip]:hover::before,
+[tooltip]:hover::after,
+.ui-state-active[tooltip]::before,
+.ui-state-active[tooltip]::after {
+    display: block;
+}
+
+/* FX All The Things */
+.ui-state-active[tooltip]:not([flow])::before,
+.ui-state-active[tooltip]:not([flow])::after,
+.ui-state-active[tooltip][flow^="up"]::before,
+.ui-state-active[tooltip][flow^="up"]::after,
+[tooltip]:not([flow]):hover::before,
+[tooltip]:not([flow]):hover::after,
+[tooltip][flow^="up"]:hover::before,
+[tooltip][flow^="up"]:hover::after,
+[tooltip][flow^="down"]:hover::before,
+[tooltip][flow^="down"]:hover::after {
+    animation: tooltips-vert 300ms ease-out forwards;
 }
