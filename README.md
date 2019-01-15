@@ -9,4 +9,5 @@ YouTube player enhancement (Google Chrome+Tampermonkey extension).
 
 ## :wrench: TODO :wrench:
 - Implement the features above
+- OPTIMIZATION: Lazy load for config
 - Name the script :sweat_smile:
