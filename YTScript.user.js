@@ -2,7 +2,7 @@
 // @name         YTScript
 // @description  YouTube player enhancement
 // @author       michi-at
-// @version      0.1.32
+// @version      0.1.33
 // @updateURL    https://github.com/michi-at/YTScript/raw/master/YTScript.meta.js
 // @downloadURL  https://github.com/michi-at/YTScript/raw/master/YTScript.user.js
 // @match        *://www.youtube.com/*
@@ -100,29 +100,6 @@
 
 
     /* Utils */
-    const Utils = {
-        MergeDeep: function (...objects) {
-            const isObject = obj => obj && typeof obj === 'object';
-
-            return objects.reduce((prev, obj) => {
-                Object.keys(obj).forEach(key => {
-                    const pVal = prev[key];
-                    const oVal = obj[key];
-
-                    if (Array.isArray(pVal) && Array.isArray(oVal)) {
-                        prev[key] = pVal.concat(...oVal);
-                    } else if (isObject(pVal) && isObject(oVal)) {
-                        prev[key] = this.MergeDeep(pVal, oVal);
-                    } else {
-                        prev[key] = oVal;
-                    }
-                });
-
-                return prev;
-            }, {});
-        }
-    }
-
     class Slider {
         constructor(target, options) {
             target.className = "ytscript-slider-container";
