@@ -132,7 +132,7 @@
             $(this.api).slider(options);
 
             this.api.children[1].setAttribute("tooltip", options.value.toString());
-            $(this.api).on("slide", function (event, ui) {
+            $(this.api).on("slide slidechange", function (event, ui) {
                 this.children[1].setAttribute("tooltip", ui.value);
             });
 
@@ -416,6 +416,10 @@
                 this.gain.value = videoSettings.volume;
                 $(this.slider.api).slider("value", this.gain.value);
             }
+        }
+
+        YtNavigateFinished(event) {
+            this.location = this.GetLocation();
         }
 
         LoadConfig(data) {
