@@ -2,7 +2,7 @@
 // @name         YTScript
 // @description  YouTube player enhancement
 // @author       michi-at
-// @version      0.1.3
+// @version      0.1.31
 // @updateURL    https://github.com/michi-at/YTScript/raw/master/YTScript.meta.js
 // @downloadURL  https://github.com/michi-at/YTScript/raw/master/YTScript.user.js
 // @match        *://www.youtube.com/*
@@ -230,6 +230,8 @@
                     }
                 }
             });
+
+            this.UpdateLocation();
         }
 
         Load() {
@@ -246,7 +248,7 @@
         }
 
         YtNavigateFinished(event) {
-
+            this.UpdateLocation();
         }
 
         Initialize() {
@@ -259,13 +261,13 @@
             return this;
         }
 
-        GetLocation() {
+        UpdateLocation() {
             let videoId, playlistId, location = window.location;
 
             [, videoId] = /(?:\?|&)v=([a-zA-Z0-9\-\_]+)/g.exec(location.search) || [, ""];
             [, playlistId] = /(?:\?|&)list=([a-zA-Z0-9\-\_]+)/g.exec(location.search) || [, ""];
 
-            return {
+            this.location = {
                 pageType: location.pathname.length === 1 ? "browse" : location.pathname.substring(1),
                 url: location.pathname + location.search,
                 videoId: videoId,
@@ -337,8 +339,6 @@
     class VolumeControl extends UIComponent {
         constructor() {
             super();
-
-            this.location = this.GetLocation();
         }
 
         Load() {
@@ -349,7 +349,7 @@
                 let gainNode = audioContext.createGain();
                 this.gain = gainNode.gain;
 
-                this.location = this.location || GetLocation();
+                this.UpdateLocation();
 
                 let videoSettings = this.config.list[this.location.videoId] || {
                     volume: 1
@@ -419,7 +419,7 @@
         }
 
         YtNavigateFinished(event) {
-            this.location = this.GetLocation();
+            super.YtNavigateFinished();
         }
 
         LoadConfig(data) {
