@@ -2,7 +2,7 @@
 // @name         YTScript
 // @description  YouTube player enhancement
 // @author       michi-at
-// @version      0.1.31
+// @version      0.1.32
 // @updateURL    https://github.com/michi-at/YTScript/raw/master/YTScript.meta.js
 // @downloadURL  https://github.com/michi-at/YTScript/raw/master/YTScript.user.js
 // @match        *://www.youtube.com/*
@@ -416,10 +416,6 @@
                 this.gain.value = videoSettings.volume;
                 $(this.slider.api).slider("value", this.gain.value);
             }
-        }
-
-        YtNavigateFinished(event) {
-            super.YtNavigateFinished();
         }
 
         LoadConfig(data) {
