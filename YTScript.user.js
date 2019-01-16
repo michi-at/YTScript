@@ -2,7 +2,7 @@
 // @name         YTScript
 // @description  YouTube player enhancement
 // @author       michi-at
-// @version      0.1.33
+// @version      0.1.9
 // @updateURL    https://github.com/michi-at/YTScript/raw/master/YTScript.meta.js
 // @downloadURL  https://github.com/michi-at/YTScript/raw/master/YTScript.user.js
 // @match        *://www.youtube.com/*
@@ -124,11 +124,7 @@
         }
 
         FullscreenChange() {
-            if (document.fullscreenElement) {
-                this.api.classList.add("ytscript-slider-fullscreen");
-            } else {
-                this.api.classList.remove("ytscript-slider-fullscreen");
-            }
+            this.api.classList.toggle("ytscript-slider-fullscreen");
         }
 
         Initialize() {
@@ -212,7 +208,7 @@
         }
 
         Load() {
-
+            this.status.isLoaded = true;
         }
 
         StopListening(event) {
@@ -280,12 +276,17 @@
         constructor() {
             super();
 
-            this.events.onUILoad = {
-                eventTarget: document.documentElement,
-                eventName: "load",
-                eventListener: this.LoadUI.bind(this),
-                useCapture: true
-            }
+            this.events = { 
+                ...super.events,
+                ...{
+                    onUILoad: {
+                        eventTarget: document.documentElement,
+                        eventName: "load",
+                        eventListener: this.LoadUI.bind(this),
+                        useCapture: true
+                    }
+                }
+            };
             this.status._isUILoaded = false;
             Object.defineProperty(this.status, "isUILoaded", {
                 get: function () {
@@ -309,7 +310,17 @@
         }
 
         LoadUI() {
+            this.status.isUILoaded = true;
+        }
+    }
 
+    class ComponentPanel extends UIComponent {
+        constructor() {
+            super();
+
+            delete this.events.onYtNavigateStart;
+            delete this.events.onYtNavigateFinish;
+            delete this.events.onLoad;
         }
     }
 
@@ -402,7 +413,33 @@
         }
 
         ClearConfig() {
+            this.config = {};
             this.EditConfig("list", {});
+        }
+    }
+
+    class PlaybackControl extends UIComponent {
+        constructor() {
+            super();
+        }
+
+        Load() {
+
+        }
+
+        LoadUI() {
+
+        }
+
+        LoadConfig(data) {
+            super.LoadConfig(data);
+
+            this.EditConfig("list", this.config.list || {});
+        }
+
+        ClearConfig() {
+            this.config = {};
+            this.EditConfig("list", {})
         }
     }
     /* End of Components */
