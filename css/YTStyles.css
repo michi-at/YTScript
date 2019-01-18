@@ -1,5 +1,5 @@
 /* Styles */
-.ytscript-slider {
+.ytscript-slider-volume {
   position: absolute;
   left: 24px;
   margin: 0;
@@ -11,7 +11,7 @@
   margin-top: -3px;
 }
 
-.ytscript-slider .ui-slider-range-min {
+.ytscript-slider-volume .ui-slider-range-min {
   height: 4px;
   width: 125px;
   position: absolute;
@@ -21,7 +21,7 @@
   outline: none;
 }
 
-.ytscript-slider .ui-slider-handle {
+.ytscript-slider-volume .ui-slider-handle {
   width: 13px;
   height: 13px;
   border-radius: 20px;
@@ -33,22 +33,22 @@
   outline: none;
 }
 
-.ytscript-slider-fullscreen {
+.ytscript-slider-volume-fullscreen {
   margin-top: -4px;
   height: 8px;
 }
 
-.ytscript-slider-fullscreen .ui-slider-range-min {
+.ytscript-slider-volume-fullscreen .ui-slider-range-min {
   height: 8px;
 }
 
-.ytscript-slider-fullscreen .ui-slider-handle {
+.ytscript-slider-volume-fullscreen .ui-slider-handle {
   width: 18px;
   height: 18px;
   margin-top: -6px;
 }
 
-.ytscript-slider-container {
+.ytscript-slider-volume-container {
   width: 145px;
   height: 100%;
   display: inline-block;

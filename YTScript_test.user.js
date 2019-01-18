@@ -102,9 +102,9 @@
     /* Utils */
     class Slider {
         constructor(target, options) {
-            target.className = "ytscript-slider-container";
+            target.className = "ytscript-slider-volume-container";
             this.api = document.createElement("div");
-            this.api.className = "ytscript-slider";
+            this.api.className = "ytscript-slider-volume";
             target.appendChild(this.api);
             $(this.api).slider(options);
 
@@ -124,7 +124,7 @@
         }
 
         FullscreenChange() {
-            this.api.classList.toggle("ytscript-slider-fullscreen");
+            this.api.classList.toggle("ytscript-slider-volume-fullscreen");
         }
 
         Initialize() {
