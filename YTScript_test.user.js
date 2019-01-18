@@ -152,7 +152,7 @@
                 onConfigSave: {
                     eventTarget: this,
                     eventName: "ConfigSaved",
-                    eventListener: undefined,
+                    eventListener: null,
                     useCapture: false
                 },
                 onLoad: {
@@ -276,16 +276,11 @@
         constructor() {
             super();
 
-            this.events = { 
-                ...super.events,
-                ...{
-                    onUILoad: {
-                        eventTarget: document.documentElement,
-                        eventName: "load",
-                        eventListener: this.LoadUI.bind(this),
-                        useCapture: true
-                    }
-                }
+            this.events.onUILoad = {
+                eventTarget: document.documentElement,
+                eventName: "load",
+                eventListener: this.LoadUI.bind(this),
+                useCapture: true
             };
             this.status._isUILoaded = false;
             Object.defineProperty(this.status, "isUILoaded", {
@@ -317,11 +312,17 @@
     class ComponentPanel extends UIComponent {
         constructor() {
             super();
-
-            delete this.events.onYtNavigateStart;
-            delete this.events.onYtNavigateFinish;
-            delete this.events.onLoad;
         }
+
+        LoadUI() {
+            let injectionTarget;
+            if((injectionTarget = document.getElementById("")) && !this.panel) {
+
+            }
+        }
+
+        YtNavigateStarted(event) {}
+        YtNavigateFinished(event) {}
     }
 
     class VolumeControl extends UIComponent {
@@ -331,7 +332,7 @@
 
         Load() {
             let videoElement;
-            if ((videoElement = document.getElementsByClassName("html5-main-video")[0])) {
+            if ((videoElement = document.getElementsByClassName("html5-main-video")[0]) && !this.gain) {
                 let audioContext = new AudioContext();
                 let source = audioContext.createMediaElementSource(videoElement);
                 let gainNode = audioContext.createGain();
