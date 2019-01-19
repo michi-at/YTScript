@@ -402,7 +402,7 @@
             if (this.root.api) {
                 this.status.isUILoaded = true;
                 if (DEBUG) {
-                    Log(`${this.name} has been loaded.`);
+                    Log(`${this.name}'s UI has been loaded.`);
                 }
             }
         }
