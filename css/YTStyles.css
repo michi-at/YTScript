@@ -8,7 +8,7 @@
   border: none;
   color: #fff;
   text-decoration: none;
-  background-color: #db3861;
+  background-color: #9a9898;
   padding: 5px 11px;
   font-size: 14px;
   text-transform: uppercase;
@@ -33,10 +33,10 @@
   transition: background-color .2s ease;
   position: absolute;
   content: '';
-  height: 4px;
+  height: 3px;
   bottom: 0;
   width: 100%;
-  background-color: #a81e41;
+  background-color: #747272;
   opacity: .18;
   border-bottom-left-radius: 2px;
   border-bottom-right-radius: 2px;
@@ -44,7 +44,7 @@
 }
 
 .ytscript-button:hover {
-  background-color: #f32155;
+  background-color: #c0bfbf;
 }
 
 .ytscript-button:hover::after {

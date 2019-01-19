@@ -1,4 +1,5 @@
 $accent: #db3861;
+$gray: #9a9898;
 
 $buttonBorderRadiusSize: 7px;
 $panelItemGap: 5px;
@@ -14,7 +15,7 @@ $panelItemGap: 5px;
         border: none;
         color: #fff;
         text-decoration: none;
-        background-color: $accent;
+        background-color: $gray;
         padding: 5px 11px;
         font-size: 14px;
         text-transform: uppercase;
@@ -39,10 +40,10 @@ $panelItemGap: 5px;
         transition: background-color .2s ease;
         position: absolute;
         content: '';
-        height: 4px;
+        height: 3px;
         bottom: 0;
         width: 100%;
-        background-color: darken($accent, 15%);
+        background-color: darken($gray, 15%);
         opacity: .18;
         border-bottom-left-radius: 2px;
         border-bottom-right-radius: 2px;
@@ -50,7 +51,7 @@ $panelItemGap: 5px;
     }
     
     &-button:hover {
-        background-color: saturate($accent, 20%);
+        background-color: lighten($gray, 15%);
     }
     
     &-button:hover::after {
