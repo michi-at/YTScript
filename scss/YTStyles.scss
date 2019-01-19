@@ -110,6 +110,8 @@ $panelItemGap: 5px;
                 text-transform: uppercase;
                 background-color: #464646;
                 backface-visibility: hidden;
+                cursor: default;
+                user-select: none;
 
                 .fa {
                     font-size: 18px;

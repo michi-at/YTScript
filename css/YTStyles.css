@@ -105,6 +105,11 @@
   background-color: #464646;
   -webkit-backface-visibility: hidden;
           backface-visibility: hidden;
+  cursor: default;
+  -webkit-user-select: none;
+     -moz-user-select: none;
+      -ms-user-select: none;
+          user-select: none;
 }
 
 .ytscript-panel-main .component-title .fa {
