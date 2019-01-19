@@ -2,7 +2,7 @@
 // @name         YTScript_test
 // @description  YouTube player enhancement
 // @author       michi-at
-// @version      0.1.904
+// @version      0.1.905
 // @updateURL    https://raw.githubusercontent.com/michi-at/YTScript/test/YTScript_test.meta.js
 // @downloadURL  https://raw.githubusercontent.com/michi-at/YTScript/test/YTScript_test.user.js
 // @match        *://www.youtube.com/*
@@ -109,7 +109,7 @@
             target.appendChild(this.api);
             $(this.api).slider(options.widjetOptions);
 
-            this.api.children[1].setAttribute("tooltip", options.value.toString());
+            this.api.children[1].setAttribute("tooltip", options.widjetOptions.value.toString());
             $(this.api).on("slide slidechange", function (event, ui) {
                 this.children[1].setAttribute("tooltip", ui.value);
             });
