@@ -9,9 +9,70 @@ $panelItemGap: 5px;
 /* Styles */
 .ytscript {
 
+    &-button {
+        display: inline-block;
+        border: none;
+        color: #fff;
+        text-decoration: none;
+        background-color: $accent;
+        padding: 5px 11px;
+        font-size: 14px;
+        text-transform: uppercase;
+        font-weight: 400;
+        font-family: "Montserrat", Arial, sans-serif;
+        letter-spacing: 0px;
+        border-radius: 2px;
+        text-align: center;
+        position: relative;
+        outline: none;
+        -webkit-transition: background-color .1s ease;
+        transition: background-color .1s ease;
+        cursor: pointer;
+
+        .fa {
+            margin-right: 5px;
+        }
+    }
+    
+    &-button::after {
+        -webkit-transition: background-color .2s ease;
+        transition: background-color .2s ease;
+        position: absolute;
+        content: '';
+        height: 4px;
+        bottom: 0;
+        width: 100%;
+        background-color: darken($accent, 15%);
+        opacity: .18;
+        border-bottom-left-radius: 2px;
+        border-bottom-right-radius: 2px;
+        left: 0
+    }
+    
+    &-button:hover {
+        background-color: saturate($accent, 20%);
+    }
+    
+    &-button:hover::after {
+        opacity: 0.22
+    }
+    
+    &-button-white {
+        color: #000;
+        background-color: #fff
+    }
+    
+    &-button-white:hover {
+        background-color: #d9d9d9
+    }
+    
+    &-button-white::after {
+        background-color: #565656
+    }
+
     &-slider-volume {
         position: absolute;
-        left: 24px;
+        left: 10px;
         margin: 0;
         height: 4px;
         width: 125px;
@@ -121,6 +182,8 @@ $panelItemGap: 5px;
                 span {
                     font-family: "Montserrat", Arial, sans-serif;
                     font-size: 18px;
+                    font-weight: 300;
+                    padding-left: 3px;
                 }
 
                 span.first {
@@ -152,6 +215,7 @@ $panelItemGap: 5px;
                 padding: 12px 10px;
                 background-color: #f5f5f5;
                 font-family: "Roboto", Arial, sans-serif;
+                font-size: 15px;
             }
         }
 
@@ -182,6 +246,13 @@ $panelItemGap: 5px;
                     transform: rotateY(-540deg) rotateX(180deg);
                 }
             }
+        }
+    }
+
+    &-controls {
+
+        &-volume {
+            text-align: center;
         }
     }
 }

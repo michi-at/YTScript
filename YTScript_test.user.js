@@ -2,7 +2,7 @@
 // @name         YTScript_test
 // @description  YouTube player enhancement
 // @author       michi-at
-// @version      0.1.905
+// @version      0.1.910
 // @updateURL    https://raw.githubusercontent.com/michi-at/YTScript/test/YTScript_test.meta.js
 // @downloadURL  https://raw.githubusercontent.com/michi-at/YTScript/test/YTScript_test.user.js
 // @match        *://www.youtube.com/*
@@ -42,6 +42,10 @@
             this.info = GM_info;
             this.config = this.LoadConfig();
             this.events = {};
+
+            if (DEBUG) {
+                console.log("ComponentManager config:", this.config);
+            }
         }
 
         LoadConfig() {
@@ -82,6 +86,7 @@
         }
 
         ComponentConfigSave(event) {
+            this.config[event.target.name] = event.detail;
             this.SaveConfig();
         }
 
@@ -253,23 +258,15 @@
             this.config = data;
         }
 
-        EditConfig(key, value) {
-            let oldValue = this.config[key];
-            this.config[key] = value;
-            this.SaveConfig(key, oldValue, value);
-        }
-
-        SaveConfig(key, oldValue, newValue) {
-            let data = {
-                name: this.name,
-                key: key,
-                oldValue: oldValue,
-                newValue: newValue
-            }
+        SaveConfig(newConfig) {
             let event = new CustomEvent(this.events.onConfigSave.eventName, {
-                detail: data
+                detail: newConfig
             });
             this.dispatchEvent(event);
+        }
+
+        ClearConfig() {
+            this.SaveConfig({});
         }
     }
 
@@ -337,24 +334,22 @@
         MenuButtonClicked(e) {
             e.preventDefault();
 
-			if ($(this.container).hasClass("open")) {
-				$(this.container).toggleClass("open");
-				$(this.container).slideUp(500, "easeInBack", function() {
-					$(this.openMenuButton).toggleClass("close");
-				});
-			}
-			else {
-				$(this.openMenuButton).toggleClass("close");
-				$(this.container).slideDown(500, "easeOutBack", function () {
-					$(this.container).toggleClass("open");
-				});
-			}
+            if ($(this.container).hasClass("open")) {
+                $(this.container).toggleClass("open");
+                $(this.container).slideUp(500, "easeInBack", function () {
+                    $(this.openMenuButton).toggleClass("close");
+                }.bind(this));
+            } else {
+                $(this.openMenuButton).toggleClass("close");
+                $(this.container).slideDown(500, "easeOutBack", function () {
+                    $(this.container).toggleClass("open");
+                }.bind(this));
+            }
         }
 
-        CreatePanelItem(componentName, titleIconHtml, contentHtml) {
-            let regexp = `(\B[A-Z]+?(?=[A-Z][^A-Z])|\B[A-Z]+?(?=[^A-Z]))`;
+        CreatePanelItem({componentName, titleIconHtml, contentNode}) {
             componentName = componentName.replace(/(\B[A-Z]+?(?=[A-Z][^A-Z])|\B[A-Z]+?(?=[^A-Z]))/, " $1")
-                                         .replace(/(\S*)(.*\S*.*)/, '<span class="first">$1</span>$2');
+                .replace(/(\S*)(.*\S*.*)/, '<span class="first">$1</span>$2');
 
             let componentMenu = document.createElement("div");
             componentMenu.className = "component-menu";
@@ -371,7 +366,7 @@
 
             let componentContent = document.createElement("div");
             componentContent.className = "component-content";
-            componentContent.insertAdjacentHTML("afterbegin", contentHtml);
+            componentContent.appendChild(contentNode);
 
             const HideContent = (e) => {
                 e.preventDefault();
@@ -389,7 +384,7 @@
             componentMenu.appendChild(componentTitle);
             componentMenu.appendChild(componentContent);
 
-            this.root.appendChild(componentMenu);
+            this.container.appendChild(componentMenu);
         }
 
         LoadUI() {
@@ -445,7 +440,8 @@
         LoadUI() {
             let injectionTarget;
             if ((injectionTarget = document.querySelector("ytd-player .ytp-chrome-bottom " +
-                    ".ytp-chrome-controls .ytp-left-controls")) && !this.slider) {
+                ".ytp-chrome-controls .ytp-left-controls")) && !this.slider)
+            {
                 let sliderContainer = document.createElement("div");
 
                 let videoSettings = this.config.list[this.location.videoId] || {
@@ -460,13 +456,35 @@
                         value: videoSettings.volume,
                         range: "min",
                         step: 0.05,
-                        slide: this.ChangeVolume.bind(this)
+                        slide: this.ChangeVolume.bind(this),
+                        stop: this.VolumeConfirmed.bind(this)
                     }
                 }).Initialize();
                 injectionTarget.appendChild(sliderContainer);
             }
 
-            if (this.slider) {
+            if ((injectionTarget = document.getElementsByClassName("ytscript-panel-main")[0]) &&
+                !this.controls)
+            {
+                this.controls = document.createElement("div");
+                this.controls.className = "ytscript-controls-volume";
+
+                let clearConfigButton = document.createElement("button");
+                clearConfigButton.className = "ytscript-button";
+                clearConfigButton.insertAdjacentHTML("beforeend", '<i class="fa fa-eraser"></i>');
+                clearConfigButton.insertAdjacentText("beforeend", "Clear config");
+                clearConfigButton.addEventListener("click", this.ClearConfig.bind(this));
+
+                this.controls.appendChild(clearConfigButton);
+
+                injectionTarget.api.CreatePanelItem({
+                    componentName: this.name,
+                    titleIconHtml: '<i class="fa fa-volume-up"></i>',
+                    contentNode: this.controls
+                });
+            }
+
+            if (this.slider && this.controls) {
                 this.status.isUILoaded = true;
                 if (DEBUG) {
                     Log(`${this.name}'s UI has been loaded.`);
@@ -474,16 +492,13 @@
             }
         }
 
+        VolumeConfirmed(event, ui) {
+            this.config.list[this.location.videoId] = { volume: ui.value };
+            this.SaveConfig(this.config);
+        }
+
         ChangeVolume(event, ui) {
-            let newList = {};
-            newList[this.location.videoId] = {
-                volume: ui.value
-            };
             this.gain.value = ui.value;
-            this.EditConfig("list", {
-                ...this.config.list,
-                ...newList
-            });
         }
 
         YtNavigateStarted(event) {
@@ -498,13 +513,15 @@
 
         LoadConfig(data) {
             super.LoadConfig(data);
+            this.config.list = this.config.list || {};
 
-            this.EditConfig("list", this.config.list || {});
+            if (DEBUG) {
+                console.log(`${this.name}'s config:`, this.config);
+            }
         }
 
         ClearConfig() {
-            this.config = {};
-            this.EditConfig("list", {});
+            this.SaveConfig({ list: {}});
         }
     }
 
@@ -523,13 +540,11 @@
 
         LoadConfig(data) {
             super.LoadConfig(data);
-
-            this.EditConfig("list", this.config.list || {});
+            this.config.list = this.config.list || {};
         }
 
         ClearConfig() {
-            this.config = {};
-            this.EditConfig("list", {})
+            this.SaveConfig({ list: {}});
         }
     }
     /* End of Components */
