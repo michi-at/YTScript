@@ -1,3 +1,7 @@
+/* Fonts */
+@import url("https://fonts.googleapis.com/css?family=Montserrat:300,500,700");
+/* Libs */
+@import url("https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css");
 /* Styles */
 .ytscript-slider-volume {
   position: absolute;
@@ -15,7 +19,7 @@
   height: 4px;
   width: 125px;
   position: absolute;
-  background: #db3838;
+  background: #db3861;
   border: none;
   border-radius: 10px;
   outline: none;
@@ -54,6 +58,129 @@
   display: inline-block;
   position: relative;
   margin: 0 auto;
+}
+
+.ytscript-panel-main {
+  overflow: hidden;
+}
+
+.ytscript-panel-main .ytscript-container {
+  background-color: #fff;
+  color: #fff;
+  max-height: 300px;
+  display: none;
+}
+
+.ytscript-panel-main .ytscript-container.open {
+  overflow-y: scroll;
+  margin-right: -18px;
+}
+
+.ytscript-panel-main .component-menu {
+  margin: 0;
+  padding: 0;
+  color: #4b4b4b;
+  border-top: #dcdcdc 1px solid;
+  border-bottom: #dcdcdc 1px solid;
+}
+
+.ytscript-panel-main .component-menu:first-child {
+  border-top: none;
+}
+
+.ytscript-panel-main .component-menu:last-child {
+  border-bottom: none;
+}
+
+.ytscript-panel-main .component-menu:not(:last-child) {
+  margin-bottom: 5px;
+}
+
+.ytscript-panel-main .component-title {
+  padding: 12px 10px;
+  display: block;
+  position: relative;
+  color: #fff;
+  text-transform: uppercase;
+  background-color: #464646;
+  -webkit-backface-visibility: hidden;
+          backface-visibility: hidden;
+}
+
+.ytscript-panel-main .component-title .fa {
+  font-size: 18px;
+  margin-right: 2px;
+}
+
+.ytscript-panel-main .component-title span {
+  font-family: "Montserrat", Arial, sans-serif;
+  font-size: 18px;
+}
+
+.ytscript-panel-main .component-title span.first {
+  color: red;
+}
+
+.ytscript-panel-main .component-title .hide {
+  background-color: transparent;
+  border: none;
+  padding: 3px 3px;
+  float: right;
+  outline: none;
+  color: #db3861;
+  -webkit-transition: -webkit-transform 0.2s ease;
+  transition: -webkit-transform 0.2s ease;
+  transition: transform 0.2s ease;
+  transition: transform 0.2s ease, -webkit-transform 0.2s ease;
+}
+
+.ytscript-panel-main .component-title .hide .fa {
+  margin: 0;
+  padding: 0;
+}
+
+.ytscript-panel-main .component-title .hide.open {
+  -webkit-transform: rotateZ(-450deg);
+          transform: rotateZ(-450deg);
+}
+
+.ytscript-panel-main .component-content {
+  display: none;
+  padding: 12px 10px;
+  background-color: #f5f5f5;
+  font-family: "Roboto", Arial, sans-serif;
+}
+
+.ytscript-panel-main .show-content {
+  text-align: center;
+  width: 100%;
+  padding: 0;
+  margin: 0;
+  background-color: #db3861;
+  border: none;
+  border-bottom-left-radius: 7px;
+  border-bottom-right-radius: 7px;
+  -webkit-transition: background-color 0.25s ease;
+  transition: background-color 0.25s ease;
+  outline: none;
+}
+
+.ytscript-panel-main .show-content .fa {
+  font-size: 24px;
+  color: #fff;
+  -webkit-transition: -webkit-transform 0.4s ease-out;
+  transition: -webkit-transform 0.4s ease-out;
+  transition: transform 0.4s ease-out;
+  transition: transform 0.4s ease-out, -webkit-transform 0.4s ease-out;
+}
+
+.ytscript-panel-main .show-content:hover {
+  background-color: #f32155;
+}
+
+.ytscript-panel-main .show-content.close .fa {
+  -webkit-transform: rotateY(-540deg) rotateX(180deg);
+          transform: rotateY(-540deg) rotateX(180deg);
 }
 
 /* START TOOLTIP STYLES */

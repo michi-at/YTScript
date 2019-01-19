@@ -2,7 +2,7 @@
 // @name         YTScript_test
 // @description  YouTube player enhancement
 // @author       michi-at
-// @version      0.1.902
+// @version      0.1.903
 // @updateURL    https://raw.githubusercontent.com/michi-at/YTScript/test/YTScript_test.meta.js
 // @downloadURL  https://raw.githubusercontent.com/michi-at/YTScript/test/YTScript_test.user.js
 // @match        *://www.youtube.com/*
@@ -102,11 +102,12 @@
     /* Utils */
     class Slider {
         constructor(target, options) {
-            target.className = "ytscript-slider-volume-container";
+            this.sliderClassName = options.className;
+            target.className = `${this.sliderClassName}-container`;
             this.api = document.createElement("div");
-            this.api.className = "ytscript-slider-volume";
+            this.api.className = this.sliderClassName;
             target.appendChild(this.api);
-            $(this.api).slider(options);
+            $(this.api).slider(options.widjetOptions);
 
             this.api.children[1].setAttribute("tooltip", options.value.toString());
             $(this.api).on("slide slidechange", function (event, ui) {
@@ -124,7 +125,7 @@
         }
 
         FullscreenChange() {
-            this.api.classList.toggle("ytscript-slider-volume-fullscreen");
+            this.api.classList.toggle(`${this.sliderClassName}-fullscreen`);
         }
 
         Initialize() {
@@ -135,6 +136,27 @@
             }
 
             return this;
+        }
+    }
+
+    const Utils = {
+        CreateComponentMarkup: function (componentName, titleIconHtml, contentHtml) {
+            let regexp = `(\B[A-Z]+?(?=[A-Z][^A-Z])|\B[A-Z]+?(?=[^A-Z]))`;
+            componentName = componentName.replace(/(\B[A-Z]+?(?=[A-Z][^A-Z])|\B[A-Z]+?(?=[^A-Z]))/, " $1")
+                                         .replace(/(\S*)(.*\S*.*)/, '<span class="first">$1</span>$2');
+            let html = `
+                <div class="component-menu">
+                    <span class="component-title">
+                        ${titleIconHtml}
+                        <span>${componentName}</span>
+                        <button class="hide"><i class="fa fa-minus"></i></button>
+                    </span>
+                    <div class="component-content">
+                        ${contentHtml}
+                    </div>
+                </div>
+            `;
+            return html;
         }
     }
     /* End of Utils */
@@ -316,7 +338,7 @@
 
         LoadUI() {
             let injectionTarget;
-            if((injectionTarget = document.getElementById("")) && !this.panel) {
+            if ((injectionTarget = document.getElementById("")) && !this.panel) {
 
             }
         }
@@ -367,12 +389,15 @@
                 };
 
                 this.slider = new Slider(sliderContainer, {
-                    min: 0,
-                    max: 5,
-                    value: videoSettings.volume,
-                    range: "min",
-                    step: 0.05,
-                    slide: this.ChangeVolume.bind(this)
+                    className: "ytscript-slider-volume",
+                    widjetOptions: {
+                        min: 0,
+                        max: 5,
+                        value: videoSettings.volume,
+                        range: "min",
+                        step: 0.05,
+                        slide: this.ChangeVolume.bind(this)
+                    }
                 }).Initialize();
                 injectionTarget.appendChild(sliderContainer);
             }

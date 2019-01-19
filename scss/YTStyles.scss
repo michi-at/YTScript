@@ -1,5 +1,11 @@
-$accent: #db3838;
+$accent: #db3861;
 
+$buttonBorderRadiusSize: 7px;
+$panelItemGap: 5px;
+/* Fonts */
+@import url('https://fonts.googleapis.com/css?family=Montserrat:300,500,700');
+/* Libs */
+@import url("https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css");
 /* Styles */
 .ytscript {
 
@@ -57,7 +63,123 @@ $accent: #db3838;
             display: inline-block;
             position: relative;
             margin: 0 auto;
-            //top: 80px;
+        }
+    }
+
+    &-panel-main {
+        overflow: hidden;
+
+        .ytscript-container {
+            background-color: #fff;
+            color: #fff;
+            max-height: 300px;
+            display: none;
+        }
+
+        .ytscript-container.open {
+            overflow-y: scroll;
+            margin-right: -18px;
+        }
+
+        .component {
+            &-menu {
+                margin: 0;
+                padding: 0;
+                color: #4b4b4b;
+                border-top: #dcdcdc 1px solid;
+                border-bottom: #dcdcdc 1px solid;
+            }
+
+            &-menu:first-child {
+                border-top: none;
+            }
+
+            &-menu:last-child {
+                border-bottom: none;
+            }
+
+            &-menu:not(:last-child) {
+                margin-bottom: $panelItemGap;
+            }
+    
+            &-title {
+                padding: 12px 10px;
+                display: block;
+                position: relative;
+                color: #fff;
+                text-transform: uppercase;
+                background-color: #464646;
+                backface-visibility: hidden;
+
+                .fa {
+                    font-size: 18px;
+                    margin-right: 2px;
+                }
+
+                span {
+                    font-family: "Montserrat", Arial, sans-serif;
+                    font-size: 18px;
+                }
+
+                span.first {
+                    color: red;
+                }
+
+                .hide {
+                    background-color: transparent;
+                    border: none;
+                    padding: 3px 3px;
+                    float: right;
+                    outline: none;
+                    color: $accent;
+                    transition: transform 0.2s ease;
+                    
+                    .fa {
+                        margin: 0;
+                        padding: 0;
+                    }
+
+                    &.open {
+                        transform: rotateZ(-450deg);
+                    }
+                }
+            }
+
+            &-content {
+                display: none;
+                padding: 12px 10px;
+                background-color: #f5f5f5;
+                font-family: "Roboto", Arial, sans-serif;
+            }
+        }
+
+        .show-content {
+            text-align: center;
+            width: 100%;
+            padding: 0;
+            margin: 0;
+            background-color: $accent;
+            border: none;
+            border-bottom-left-radius: $buttonBorderRadiusSize;
+            border-bottom-right-radius: $buttonBorderRadiusSize;
+            transition: background-color 0.25s ease;
+            outline: none;
+
+            .fa {
+                font-size: 24px;
+                color: #fff;
+                transition: transform 0.4s ease-out;
+            }
+
+            &:hover {
+                background-color: saturate($color: $accent, $amount: 20%);
+            }
+
+            &.close {
+                .fa {
+                    transform: rotateY(-540deg) rotateX(180deg);
+                }
+            }
         }
     }
 }
