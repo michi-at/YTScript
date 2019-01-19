@@ -2,7 +2,7 @@
 // @name         YTScript_test
 // @description  YouTube player enhancement
 // @author       michi-at
-// @version      0.1.903
+// @version      0.1.904
 // @updateURL    https://raw.githubusercontent.com/michi-at/YTScript/test/YTScript_test.meta.js
 // @downloadURL  https://raw.githubusercontent.com/michi-at/YTScript/test/YTScript_test.user.js
 // @match        *://www.youtube.com/*
@@ -136,27 +136,6 @@
             }
 
             return this;
-        }
-    }
-
-    const Utils = {
-        CreateComponentMarkup: function (componentName, titleIconHtml, contentHtml) {
-            let regexp = `(\B[A-Z]+?(?=[A-Z][^A-Z])|\B[A-Z]+?(?=[^A-Z]))`;
-            componentName = componentName.replace(/(\B[A-Z]+?(?=[A-Z][^A-Z])|\B[A-Z]+?(?=[^A-Z]))/, " $1")
-                                         .replace(/(\S*)(.*\S*.*)/, '<span class="first">$1</span>$2');
-            let html = `
-                <div class="component-menu">
-                    <span class="component-title">
-                        ${titleIconHtml}
-                        <span>${componentName}</span>
-                        <button class="hide"><i class="fa fa-minus"></i></button>
-                    </span>
-                    <div class="component-content">
-                        ${contentHtml}
-                    </div>
-                </div>
-            `;
-            return html;
         }
     }
     /* End of Utils */
@@ -334,12 +313,97 @@
     class ComponentPanel extends UIComponent {
         constructor() {
             super();
+
+            this.root = document.createElement("div");
+            this.root.className = "ytscript-panel-main";
+
+            this.openMenuButton = document.createElement("button");
+            this.openMenuButton.className = "show-content";
+            this.openMenuButton.innerHTML = '<i class="fa fa-angle-double-down"></i>';
+            this.events.onMenuButtonClick = {
+                eventTarget: this.openMenuButton,
+                eventName: "click",
+                eventListener: this.MenuButtonClicked.bind(this),
+                useCapture: false
+            }
+
+            this.container = document.createElement("div");
+            this.container.className = "ytscript-container";
+
+            this.root.appendChild(this.container);
+            this.root.appendChild(this.openMenuButton);
+        }
+
+        MenuButtonClicked(e) {
+            e.preventDefault();
+
+			if ($(this.container).hasClass("open")) {
+				$(this.container).toggleClass("open");
+				$(this.container).slideUp(500, "easeInBack", function() {
+					$(this.openMenuButton).toggleClass("close");
+				});
+			}
+			else {
+				$(this.openMenuButton).toggleClass("close");
+				$(this.container).slideDown(500, "easeOutBack", function () {
+					$(this.container).toggleClass("open");
+				});
+			}
+        }
+
+        CreatePanelItem(componentName, titleIconHtml, contentHtml) {
+            let regexp = `(\B[A-Z]+?(?=[A-Z][^A-Z])|\B[A-Z]+?(?=[^A-Z]))`;
+            componentName = componentName.replace(/(\B[A-Z]+?(?=[A-Z][^A-Z])|\B[A-Z]+?(?=[^A-Z]))/, " $1")
+                                         .replace(/(\S*)(.*\S*.*)/, '<span class="first">$1</span>$2');
+
+            let componentMenu = document.createElement("div");
+            componentMenu.className = "component-menu";
+
+            let componentTitle = document.createElement("div");
+            componentTitle.className = "component-title";
+            componentTitle.insertAdjacentHTML("afterbegin", titleIconHtml);
+            componentTitle.insertAdjacentHTML("beforeend", `<span>${componentName}</span>`);
+
+            let hideContentButton = document.createElement("button");
+            hideContentButton.className = "hide";
+            hideContentButton.insertAdjacentHTML("afterbegin", '<i class="fa fa-minus"></i>');
+            componentTitle.appendChild(hideContentButton);
+
+            let componentContent = document.createElement("div");
+            componentContent.className = "component-content";
+            componentContent.insertAdjacentHTML("afterbegin", contentHtml);
+
+            const HideContent = (e) => {
+                e.preventDefault();
+
+                $(componentContent).slideToggle(400, function () {
+                    $(hideContentButton).toggleClass("open");
+                });
+
+                e.stopPropagation();
+            }
+
+            componentTitle.addEventListener("click", HideContent);
+            hideContentButton.addEventListener("click", HideContent);
+
+            componentMenu.appendChild(componentTitle);
+            componentMenu.appendChild(componentContent);
+
+            this.root.appendChild(componentMenu);
         }
 
         LoadUI() {
             let injectionTarget;
-            if ((injectionTarget = document.getElementById("")) && !this.panel) {
+            if ((injectionTarget = document.querySelector("ytd-watch-flexy #player")) && !this.root.api) {
+                injectionTarget.appendChild(this.root);
+                this.root.api = this;
+            }
 
+            if (this.root.api) {
+                this.status.isUILoaded = true;
+                if (DEBUG) {
+                    Log(`${this.name} has been loaded.`);
+                }
             }
         }
 

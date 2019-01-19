@@ -6,6 +6,7 @@ $panelItemGap: 5px;
 @import url('https://fonts.googleapis.com/css?family=Montserrat:300,500,700');
 /* Libs */
 @import url("https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css");
+@import url("https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/themes/smoothness/jquery-ui.css");
 /* Styles */
 .ytscript {
 
@@ -170,7 +171,7 @@ $panelItemGap: 5px;
             .fa {
                 font-size: 24px;
                 color: #fff;
-                transition: transform 0.4s ease-out;
+                transition: transform 0.4s ease-in-out;
             }
 
             &:hover {
