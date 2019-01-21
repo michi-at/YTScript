@@ -134,12 +134,9 @@ $panelItemGap: 5px;
         .ytscript-container {
             background-color: #fff;
             color: #fff;
-            max-height: 300px;
-            display: none;
-        }
-
-        .ytscript-container.open {
+            height: 0;
             overflow-y: scroll;
+            overflow-x: hidden;
             margin-right: -18px;
         }
 

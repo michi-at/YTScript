@@ -2,7 +2,7 @@
 // @name         YTScript_test
 // @description  YouTube player enhancement
 // @author       michi-at
-// @version      0.1.910
+// @version      0.1.915
 // @updateURL    https://raw.githubusercontent.com/michi-at/YTScript/test/YTScript_test.meta.js
 // @downloadURL  https://raw.githubusercontent.com/michi-at/YTScript/test/YTScript_test.user.js
 // @match        *://www.youtube.com/*
@@ -141,6 +141,27 @@
             }
 
             return this;
+        }
+    }
+
+    const Utils = {
+        Animate: function ({ duration, timing, draw, complete }) {
+
+            let start = performance.now();
+
+            requestAnimationFrame(function animate(time) {
+                let timeFraction = (time - start) / duration;
+                if (timeFraction > 1) timeFraction = 1;
+                if (timeFraction < 0) timeFraction = 0;
+
+                let progress = timing(timeFraction);
+                console.log(timeFraction, progress);
+                draw(progress, complete);
+
+                if (timeFraction < 1) {
+                    requestAnimationFrame(animate);
+                }
+            });
         }
     }
     /* End of Utils */
@@ -310,6 +331,7 @@
     class ComponentPanel extends UIComponent {
         constructor() {
             super();
+            this.slideDuration = 500;
 
             this.root = document.createElement("div");
             this.root.className = "ytscript-panel-main";
@@ -333,26 +355,66 @@
 
         MenuButtonClicked(e) {
             e.preventDefault();
+            this.CalculateContainerHeight();
+            if (this.container.classList.contains("open")) {
+                Utils.Animate({
+                    duration: this.slideDuration,
+                    timing: this.EaseUp,
+                    draw: this.SlideUp.bind(this),
+                    complete: this.TestComplete.bind(this)
+                });
+            }
+            else {
+                Utils.Animate({
+                    duration: this.slideDuration,
+                    timing: this.EaseDown,
+                    draw: this.SlideDown.bind(this),
+                    complete: this.TestComplete.bind(this)
+                });
+            }
+            this.container.classList.toggle("open");
+            e.stopPropagation();
+        }
 
-            if ($(this.container).hasClass("open")) {
-                $(this.container).toggleClass("open");
-                $(this.container).slideUp(500, "easeInBack", function () {
-                    $(this.openMenuButton).toggleClass("close");
-                }.bind(this));
-            } else {
-                $(this.openMenuButton).toggleClass("close");
-                $(this.container).slideDown(500, "easeOutBack", function () {
-                    $(this.container).toggleClass("open");
-                }.bind(this));
+        TestComplete() {
+            
+        }
+
+        SlideDown(progress, complete) {
+            this.container.style.height = this.containerHeight * progress + "px";
+            if (progress === 1) {
+                complete();
             }
         }
 
-        CreatePanelItem({componentName, titleIconHtml, contentNode}) {
+        SlideUp(progress, complete) {
+            this.container.style.height = this.containerHeight * (1 - progress) + "px";
+            if (progress === 1) {
+                complete();
+            }
+        }
+
+        Ease(t) {
+            let square = t * t;
+            return square / (2.0 * (square - t) + 1.0);
+        }
+
+        EaseDown(t) {
+            let square = t * t;
+            return 3.54 * t - 3.42 * square + 0.88 * t * square;
+        }
+
+        EaseUp(t) {
+            return t * t * (3 * t - 2);
+        }
+
+        CreatePanelItem({ componentName, titleIconHtml, contentNode }) {
             componentName = componentName.replace(/(\B[A-Z]+?(?=[A-Z][^A-Z])|\B[A-Z]+?(?=[^A-Z]))/, " $1")
                 .replace(/(\S*)(.*\S*.*)/, '<span class="first">$1</span>$2');
 
             let componentMenu = document.createElement("div");
             componentMenu.className = "component-menu";
+            componentMenu.GetRenderedHeight = this.GetRenderedHeight(componentMenu);
 
             let componentTitle = document.createElement("div");
             componentTitle.className = "component-title";
@@ -373,18 +435,43 @@
 
                 $(componentContent).slideToggle(400, function () {
                     $(hideContentButton).toggleClass("open");
-                });
+                    this.CalculateContainerHeight();
+                    console.log(this.containerHeight);
+                }.bind(this));
 
                 e.stopPropagation();
             }
 
-            componentTitle.addEventListener("click", HideContent);
-            hideContentButton.addEventListener("click", HideContent);
+            componentTitle.addEventListener("click", HideContent.bind(this));
+            hideContentButton.addEventListener("click", HideContent.bind(this));
 
             componentMenu.appendChild(componentTitle);
             componentMenu.appendChild(componentContent);
 
             this.container.appendChild(componentMenu);
+        }
+
+        CalculateContainerHeight() {
+            this.containerHeight = 0;
+            for (let elem of this.container.children) {
+                this.containerHeight += elem.GetRenderedHeight();
+            }
+        }
+
+        GetRenderedHeight(elem) {
+            let computedStyle = window.getComputedStyle(elem);
+            let marginTop = parseInt(computedStyle.getPropertyValue("margin-top"));
+            let marginBottom = parseInt(computedStyle.getPropertyValue("margin-bottom"));
+            return function () {
+                if (computedStyle.length === 0) {
+                    computedStyle = window.getComputedStyle(elem);
+                    marginTop = parseInt(computedStyle.getPropertyValue("margin-top"));
+                    marginBottom = parseInt(computedStyle.getPropertyValue("margin-bottom"));
+                }
+                if (isNaN(marginTop)) marginTop = parseInt(computedStyle.getPropertyValue("margin-top"));
+                if (isNaN(marginBottom)) marginBottom = parseInt(computedStyle.getPropertyValue("margin-bottom"));
+                return elem.offsetHeight + marginTop + marginBottom;
+            }
         }
 
         LoadUI() {
@@ -521,7 +608,7 @@
         }
 
         ClearConfig() {
-            this.SaveConfig({ list: {}});
+            this.SaveConfig({ list: {} });
         }
     }
 
@@ -544,7 +631,7 @@
         }
 
         ClearConfig() {
-            this.SaveConfig({ list: {}});
+            this.SaveConfig({ list: {} });
         }
     }
     /* End of Components */
