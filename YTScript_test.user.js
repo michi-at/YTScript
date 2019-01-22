@@ -2,7 +2,7 @@
 // @name         YTScript_test
 // @description  YouTube player enhancement
 // @author       michi-at
-// @version      0.1.917
+// @version      0.1.918
 // @updateURL    https://raw.githubusercontent.com/michi-at/YTScript/test/YTScript_test.meta.js
 // @downloadURL  https://raw.githubusercontent.com/michi-at/YTScript/test/YTScript_test.user.js
 // @match        *://www.youtube.com/*
@@ -452,6 +452,7 @@
                 componentContent.classList.add("processing");
                 contentNode.renderedHeight = contentNode.renderedHeight || contentNode.GetRenderedHeight();
                 if (componentContent.classList.contains("open")) {
+                    this.container.renderedHeight -= contentNode.renderedHeight;
                     this.Slide({
                         element: componentContent,
                         fromValue: contentNode.renderedHeight,
@@ -463,16 +464,16 @@
                     });
                     this.Slide({
                         element: this.container,
-                        fromValue: this.container.renderedHeight,
-                        toValue: this.container.renderedHeight - contentNode.renderedHeight,
+                        fromValue: this.container.renderedHeight + contentNode.renderedHeight,
+                        toValue: this.container.renderedHeight,
                         easingFunction: Utils.Ease,
                         completeFunction: () => { 
-                            this.container.renderedHeight -= contentNode.renderedHeight;
                             componentContent.classList.remove("processing");
                         }
                     });
                 }
                 else {
+                    this.container.renderedHeight += contentNode.renderedHeight;
                     this.Slide({
                         element: componentContent,
                         fromValue: 0,
@@ -484,11 +485,10 @@
                     });
                     this.Slide({
                         element: this.container,
-                        fromValue: this.container.renderedHeight,
-                        toValue: this.container.renderedHeight + contentNode.renderedHeight,
+                        fromValue: this.container.renderedHeight - contentNode.renderedHeight,
+                        toValue: this.container.renderedHeight,
                         easingFunction: Utils.EaseDown,
                         completeFunction: () => { 
-                            this.container.renderedHeight += contentNode.renderedHeight;
                             componentContent.classList.remove("processing");
                         }
                     });
