@@ -1,10 +1,10 @@
 // ==UserScript==
-// @name         YTScript
+// @name         YTScript_test
 // @description  YouTube player enhancement
 // @author       michi-at
 // @version      0.1.919
-// @updateURL    https://raw.githubusercontent.com/michi-at/YTScript/master/YTScript.meta.js
-// @downloadURL  https://raw.githubusercontent.com/michi-at/YTScript/master/YTScript.user.js
+// @updateURL    https://raw.githubusercontent.com/michi-at/YTScript/test/YTScript_test.meta.js
+// @downloadURL  https://raw.githubusercontent.com/michi-at/YTScript/test/YTScript_test.user.js
 // @match        *://www.youtube.com/*
 // @exclude      *://www.youtube.com/embed/*
 // @grant        GM_getValue
@@ -27,7 +27,7 @@
     link.type = "text/css";
     link.href = "https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/themes/smoothness/jquery-ui.css";
     document.head.appendChild(link);
-    link.href = "https://michi-at.github.io/css/YTStyles.min.css";
+    link.href = "https://michi-at.github.io/css/YTStyles_test.min.css";
     document.head.appendChild(link);
 
 
