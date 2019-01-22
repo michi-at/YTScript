@@ -1,10 +1,10 @@
 // ==UserScript==
-// @name         YTScript_test
+// @name         YTScript
 // @description  YouTube player enhancement
 // @author       michi-at
 // @version      0.1.919
-// @updateURL    https://raw.githubusercontent.com/michi-at/YTScript/test/YTScript_test.meta.js
-// @downloadURL  https://raw.githubusercontent.com/michi-at/YTScript/test/YTScript_test.user.js
+// @updateURL    https://raw.githubusercontent.com/michi-at/YTScript/master/YTScript.meta.js
+// @downloadURL  https://raw.githubusercontent.com/michi-at/YTScript/master/YTScript.user.js
 // @match        *://www.youtube.com/*
 // @exclude      *://www.youtube.com/embed/*
 // @grant        GM_getValue
