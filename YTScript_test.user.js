@@ -2,7 +2,7 @@
 // @name         YTScript_test
 // @description  YouTube player enhancement
 // @author       michi-at
-// @version      0.1.918
+// @version      0.1.919
 // @updateURL    https://raw.githubusercontent.com/michi-at/YTScript/test/YTScript_test.meta.js
 // @downloadURL  https://raw.githubusercontent.com/michi-at/YTScript/test/YTScript_test.user.js
 // @match        *://www.youtube.com/*
@@ -18,7 +18,7 @@
 (function () {
     "use strict";
 
-    const DEBUG = true;
+    const DEBUG = false;
 
 
 
@@ -42,10 +42,6 @@
             this.info = GM_info;
             this.config = this.LoadConfig();
             this.events = {};
-
-            if (DEBUG) {
-                console.log("ComponentManager config:", this.config);
-            }
         }
 
         LoadConfig() {
@@ -657,10 +653,6 @@
         LoadConfig(data) {
             super.LoadConfig(data);
             this.config.list = this.config.list || {};
-
-            if (DEBUG) {
-                console.log(`${this.name}'s config:`, this.config);
-            }
         }
 
         ClearConfig() {
@@ -719,6 +711,5 @@
 
     manager.AddComponent(new ComponentPanel())
            .AddComponent(new VolumeControl())
-           .AddComponent(new PlaybackControl())
            .Initialize();
 })();
