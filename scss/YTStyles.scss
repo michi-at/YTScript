@@ -138,6 +138,7 @@ $panelItemGap: 5px;
             overflow-y: scroll;
             overflow-x: hidden;
             margin-right: -18px;
+            max-height: 500px;
         }
 
         .component {
@@ -239,7 +240,7 @@ $panelItemGap: 5px;
                 background-color: saturate($color: $accent, $amount: 20%);
             }
 
-            &.close {
+            &.open {
                 .fa {
                     transform: rotateY(-540deg) rotateX(180deg);
                 }

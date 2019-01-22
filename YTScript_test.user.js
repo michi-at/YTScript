@@ -2,7 +2,7 @@
 // @name         YTScript_test
 // @description  YouTube player enhancement
 // @author       michi-at
-// @version      0.1.915
+// @version      0.1.916
 // @updateURL    https://raw.githubusercontent.com/michi-at/YTScript/test/YTScript_test.meta.js
 // @downloadURL  https://raw.githubusercontent.com/michi-at/YTScript/test/YTScript_test.user.js
 // @match        *://www.youtube.com/*
@@ -155,13 +155,35 @@
                 if (timeFraction < 0) timeFraction = 0;
 
                 let progress = timing(timeFraction);
-                console.log(timeFraction, progress);
-                draw(progress, complete);
+
+                ((progress, complete) => {
+                    draw(progress);
+                    
+                    if (progress === 1) {
+                        complete();
+                    }
+                })(progress, complete);
 
                 if (timeFraction < 1) {
                     requestAnimationFrame(animate);
                 }
             });
+        },
+        LinearInterpolation: function (x1, y1, x2, y2) {
+            let a = (y1 - y2) / (x1 - x2);
+            let b = (x1 * y2 - x2 * y1) / (x1 - x2);
+            return function (x) {
+                return a * x + b;
+            }
+        },
+        Ease: function (t) {
+            return t * t / (2.0 * (t * t - t) + 1.0);
+        },
+        EaseDown: function (t) {
+            return t * (3.54 - 3.42 * t + 0.88 * t * t);
+        },
+        EaseUp: function (t) {
+            return t * t * (3 * t - 2);
         }
     }
     /* End of Utils */
@@ -331,7 +353,6 @@
     class ComponentPanel extends UIComponent {
         constructor() {
             super();
-            this.slideDuration = 500;
 
             this.root = document.createElement("div");
             this.root.className = "ytscript-panel-main";
@@ -348,64 +369,51 @@
 
             this.container = document.createElement("div");
             this.container.className = "ytscript-container";
+            this.container.slideDuration = 500;
 
             this.root.appendChild(this.container);
             this.root.appendChild(this.openMenuButton);
         }
 
-        MenuButtonClicked(e) {
-            e.preventDefault();
+        MenuButtonClicked(event) {
+            event.preventDefault();
             this.CalculateContainerHeight();
             if (this.container.classList.contains("open")) {
-                Utils.Animate({
-                    duration: this.slideDuration,
-                    timing: this.EaseUp,
-                    draw: this.SlideUp.bind(this),
-                    complete: this.TestComplete.bind(this)
+                this.Slide({
+                    element: this.container,
+                    fromValue: this.container.renderedHeight,
+                    toValue: 0,
+                    easingFunction: Utils.EaseUp,
+                    completeFunction: () => this.SlideComplete(this.openMenuButton)
                 });
             }
             else {
-                Utils.Animate({
-                    duration: this.slideDuration,
-                    timing: this.EaseDown,
-                    draw: this.SlideDown.bind(this),
-                    complete: this.TestComplete.bind(this)
+                this.Slide({
+                    element: this.container,
+                    fromValue: 0,
+                    toValue: this.container.renderedHeight,
+                    easingFunction: Utils.EaseDown,
+                    completeFunction: () => this.SlideComplete(this.openMenuButton)
                 });
             }
             this.container.classList.toggle("open");
-            e.stopPropagation();
+            event.stopPropagation();
         }
-
-        TestComplete() {
-            
+        
+        Slide({ element, fromValue, toValue, easingFunction, completeFunction }) {
+            const LinearFit = Utils.LinearInterpolation(0, fromValue, 1, toValue);
+            Utils.Animate({
+                duration: element.slideDuration,
+                timing: easingFunction,
+                draw: function (progress) {
+                    element.style.height = LinearFit(progress) + "px";
+                },
+                complete: completeFunction
+            });
         }
-
-        SlideDown(progress, complete) {
-            this.container.style.height = this.containerHeight * progress + "px";
-            if (progress === 1) {
-                complete();
-            }
-        }
-
-        SlideUp(progress, complete) {
-            this.container.style.height = this.containerHeight * (1 - progress) + "px";
-            if (progress === 1) {
-                complete();
-            }
-        }
-
-        Ease(t) {
-            let square = t * t;
-            return square / (2.0 * (square - t) + 1.0);
-        }
-
-        EaseDown(t) {
-            let square = t * t;
-            return 3.54 * t - 3.42 * square + 0.88 * t * square;
-        }
-
-        EaseUp(t) {
-            return t * t * (3 * t - 2);
+        
+        SlideComplete(element) {
+            element.classList.toggle("open");
         }
 
         CreatePanelItem({ componentName, titleIconHtml, contentNode }) {
@@ -430,16 +438,15 @@
             componentContent.className = "component-content";
             componentContent.appendChild(contentNode);
 
-            const HideContent = (e) => {
-                e.preventDefault();
+            const HideContent = (event) => {
+                event.preventDefault();
 
                 $(componentContent).slideToggle(400, function () {
                     $(hideContentButton).toggleClass("open");
                     this.CalculateContainerHeight();
-                    console.log(this.containerHeight);
                 }.bind(this));
 
-                e.stopPropagation();
+                event.stopPropagation();
             }
 
             componentTitle.addEventListener("click", HideContent.bind(this));
@@ -452,25 +459,25 @@
         }
 
         CalculateContainerHeight() {
-            this.containerHeight = 0;
+            this.container.renderedHeight = 0;
             for (let elem of this.container.children) {
-                this.containerHeight += elem.GetRenderedHeight();
+                this.container.renderedHeight += elem.GetRenderedHeight();
             }
         }
 
-        GetRenderedHeight(elem) {
-            let computedStyle = window.getComputedStyle(elem);
-            let marginTop = parseInt(computedStyle.getPropertyValue("margin-top"));
-            let marginBottom = parseInt(computedStyle.getPropertyValue("margin-bottom"));
+        GetRenderedHeight(element) {
+            let computedStyle = window.getComputedStyle(element);
+            let marginTop = parseFloat(computedStyle.getPropertyValue("margin-top"));
+            let marginBottom = parseFloat(computedStyle.getPropertyValue("margin-bottom"));
             return function () {
                 if (computedStyle.length === 0) {
-                    computedStyle = window.getComputedStyle(elem);
-                    marginTop = parseInt(computedStyle.getPropertyValue("margin-top"));
-                    marginBottom = parseInt(computedStyle.getPropertyValue("margin-bottom"));
+                    computedStyle = window.getComputedStyle(element);
+                    marginTop = parseFloat(computedStyle.getPropertyValue("margin-top"));
+                    marginBottom = parseFloat(computedStyle.getPropertyValue("margin-bottom"));
                 }
-                if (isNaN(marginTop)) marginTop = parseInt(computedStyle.getPropertyValue("margin-top"));
-                if (isNaN(marginBottom)) marginBottom = parseInt(computedStyle.getPropertyValue("margin-bottom"));
-                return elem.offsetHeight + marginTop + marginBottom;
+                if (isNaN(marginTop)) marginTop = parseFloat(computedStyle.getPropertyValue("margin-top"));
+                if (isNaN(marginBottom)) marginBottom = parseFloat(computedStyle.getPropertyValue("margin-bottom"));
+                return element.offsetHeight + marginTop + marginBottom;
             }
         }
 
