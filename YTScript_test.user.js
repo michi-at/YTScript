@@ -2,7 +2,7 @@
 // @name         YTScript_test
 // @description  YouTube player enhancement
 // @author       michi-at
-// @version      0.1.916
+// @version      0.1.917
 // @updateURL    https://raw.githubusercontent.com/michi-at/YTScript/test/YTScript_test.meta.js
 // @downloadURL  https://raw.githubusercontent.com/michi-at/YTScript/test/YTScript_test.user.js
 // @match        *://www.youtube.com/*
@@ -436,15 +436,64 @@
 
             let componentContent = document.createElement("div");
             componentContent.className = "component-content";
+            componentContent.slideDuration = 300;
+
+            contentNode.GetRenderedHeight = this.GetRenderedHeight(contentNode);
+
             componentContent.appendChild(contentNode);
 
             const HideContent = (event) => {
                 event.preventDefault();
+                
+                if (componentContent.classList.contains("processing")) {
+                    return;
+                }
 
-                $(componentContent).slideToggle(400, function () {
-                    $(hideContentButton).toggleClass("open");
-                    this.CalculateContainerHeight();
-                }.bind(this));
+                componentContent.classList.add("processing");
+                contentNode.renderedHeight = contentNode.renderedHeight || contentNode.GetRenderedHeight();
+                if (componentContent.classList.contains("open")) {
+                    this.Slide({
+                        element: componentContent,
+                        fromValue: contentNode.renderedHeight,
+                        toValue: 0,
+                        easingFunction: Utils.Ease,
+                        completeFunction: () => { 
+                            this.SlideComplete(hideContentButton);
+                        }
+                    });
+                    this.Slide({
+                        element: this.container,
+                        fromValue: this.container.renderedHeight,
+                        toValue: this.container.renderedHeight - contentNode.renderedHeight,
+                        easingFunction: Utils.Ease,
+                        completeFunction: () => { 
+                            this.container.renderedHeight -= contentNode.renderedHeight;
+                            componentContent.classList.remove("processing");
+                        }
+                    });
+                }
+                else {
+                    this.Slide({
+                        element: componentContent,
+                        fromValue: 0,
+                        toValue: contentNode.renderedHeight,
+                        easingFunction: Utils.Ease,
+                        completeFunction: () => { 
+                            this.SlideComplete(hideContentButton);
+                        }
+                    });
+                    this.Slide({
+                        element: this.container,
+                        fromValue: this.container.renderedHeight,
+                        toValue: this.container.renderedHeight + contentNode.renderedHeight,
+                        easingFunction: Utils.EaseDown,
+                        completeFunction: () => { 
+                            this.container.renderedHeight += contentNode.renderedHeight;
+                            componentContent.classList.remove("processing");
+                        }
+                    });
+                }
+                componentContent.classList.toggle("open");
 
                 event.stopPropagation();
             }
@@ -624,12 +673,35 @@
             super();
         }
 
-        Load() {
-
-        }
-
         LoadUI() {
+            let injectionTarget;
+            if ((injectionTarget = document.getElementsByClassName("ytscript-panel-main")[0]) &&
+                !this.controls)
+            {
+                this.controls = document.createElement("div");
+                this.controls.className = "ytscript-controls-playback";
 
+                let clearConfigButton = document.createElement("button");
+                clearConfigButton.className = "ytscript-button";
+                clearConfigButton.insertAdjacentHTML("beforeend", '<i class="fa fa-eraser"></i>');
+                clearConfigButton.insertAdjacentText("beforeend", "Clear config");
+                clearConfigButton.addEventListener("click", this.ClearConfig.bind(this));
+
+                this.controls.appendChild(clearConfigButton);
+
+                injectionTarget.api.CreatePanelItem({
+                    componentName: this.name,
+                    titleIconHtml: '<i class="fa fa-play-circle"></i>',
+                    contentNode: this.controls
+                });
+            }
+
+            if (this.controls) {
+                this.status.isUILoaded = true;
+                if (DEBUG) {
+                    Log(`${this.name}'s UI has been loaded.`);
+                }
+            }
         }
 
         LoadConfig(data) {
@@ -647,5 +719,6 @@
 
     manager.AddComponent(new ComponentPanel())
            .AddComponent(new VolumeControl())
+           .AddComponent(new PlaybackControl())
            .Initialize();
 })();

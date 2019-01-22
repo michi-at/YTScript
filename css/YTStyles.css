@@ -211,11 +211,12 @@
 }
 
 .ytscript-panel-main .component-content {
-  display: none;
-  padding: 12px 10px;
+  display: block;
   background-color: #f5f5f5;
   font-family: "Roboto", Arial, sans-serif;
   font-size: 15px;
+  overflow: hidden;
+  height: 0;
 }
 
 .ytscript-panel-main .show-content {
@@ -251,6 +252,12 @@
 }
 
 .ytscript-controls-volume {
+  padding: 12px 10px;
+  text-align: center;
+}
+
+.ytscript-controls-playback {
+  padding: 12px 10px;
   text-align: center;
 }
 
