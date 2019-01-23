@@ -2,7 +2,7 @@
 // @name         YTScript_test
 // @description  YouTube player enhancement
 // @author       michi-at
-// @version      0.1.919
+// @version      0.1.920
 // @updateURL    https://raw.githubusercontent.com/michi-at/YTScript/test/YTScript_test.meta.js
 // @downloadURL  https://raw.githubusercontent.com/michi-at/YTScript/test/YTScript_test.user.js
 // @match        *://www.youtube.com/*
@@ -83,6 +83,7 @@
 
         ComponentConfigSave(event) {
             this.config[event.target.name] = event.detail;
+            this.components[event.target.name].LoadConfig(this.config[event.target.name]);
             this.SaveConfig();
         }
 
@@ -642,12 +643,19 @@
 
         YtNavigateStarted(event) {
             if (event.detail.pageType === "watch") {
-                let videoSettings = this.config.list[event.detail.endpoint.watchEndpoint.videoId] || {
-                    volume: 1
-                };
-                this.gain.value = videoSettings.volume;
+                this.gain.value =    this.config.list[event.detail.endpoint.watchEndpoint.videoId]
+                                  && this.config.list[event.detail.endpoint.watchEndpoint.videoId].volume
+                                  || 1;
                 $(this.slider.api).slider("value", this.gain.value);
             }
+        }
+
+        YtNavigateFinished(event) {
+            super.YtNavigateFinished(event);
+            this.gain.value =    this.config.list[this.location.videoId]
+                              && this.config.list[this.location.videoId].volume
+                              || 1;
+            $(this.slider.api).slider("value", this.gain.value);
         }
 
         LoadConfig(data) {
@@ -710,6 +718,7 @@
 
 
     manager.AddComponent(new ComponentPanel())
+           .AddComponent(new PlaybackControl())
            .AddComponent(new VolumeControl())
            .Initialize();
 })();
