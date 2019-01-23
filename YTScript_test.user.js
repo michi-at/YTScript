@@ -2,7 +2,7 @@
 // @name         YTScript_test
 // @description  YouTube player enhancement
 // @author       michi-at
-// @version      0.1.921
+// @version      0.1.922
 // @updateURL    https://raw.githubusercontent.com/michi-at/YTScript/test/YTScript_test.meta.js
 // @downloadURL  https://raw.githubusercontent.com/michi-at/YTScript/test/YTScript_test.user.js
 // @match        *://www.youtube.com/*
@@ -549,6 +549,8 @@
     class VolumeControl extends UIComponent {
         constructor() {
             super();
+
+            this.DEFAULT_VOLUME = 1;
         }
 
         Load() {
@@ -559,12 +561,8 @@
                 let gainNode = audioContext.createGain();
                 this.gain = gainNode.gain;
 
-                this.UpdateLocation();
+                this.gain.value = this.GetVolume();
 
-                let videoSettings = this.config.list[this.location.videoId] || {
-                    volume: 1
-                };
-                this.gain.value = videoSettings.volume;
                 gainNode.connect(audioContext.destination);
                 source.connect(gainNode);
             }
@@ -577,6 +575,13 @@
             }
         }
 
+        GetVolume() {
+            this.UpdateLocation();
+            return    this.config.list[this.location.videoId]
+                   && this.config.list[this.location.videoId].volume
+                   || this.DEFAULT_VOLUME;
+        }
+
         LoadUI() {
             let injectionTarget;
             if ((injectionTarget = document.querySelector("ytd-player .ytp-chrome-bottom " +
@@ -584,16 +589,12 @@
             {
                 let sliderContainer = document.createElement("div");
 
-                let videoSettings = this.config.list[this.location.videoId] || {
-                    volume: 1
-                };
-
                 this.slider = new Slider(sliderContainer, {
                     className: "ytscript-slider-volume",
                     widjetOptions: {
                         min: 0,
                         max: 5,
-                        value: videoSettings.volume,
+                        value: this.GetVolume(),
                         range: "min",
                         step: 0.05,
                         slide: this.ChangeVolume.bind(this),
@@ -643,18 +644,13 @@
 
         YtNavigateStarted(event) {
             if (event.detail.pageType === "watch") {
-                this.gain.value =    this.config.list[event.detail.endpoint.watchEndpoint.videoId]
-                                  && this.config.list[event.detail.endpoint.watchEndpoint.videoId].volume
-                                  || 1;
+                this.gain.value = this.GetVolume();
                 $(this.slider.api).slider("value", this.gain.value);
             }
         }
 
         YtNavigateFinished(event) {
-            super.YtNavigateFinished(event);
-            this.gain.value =    this.config.list[this.location.videoId]
-                              && this.config.list[this.location.videoId].volume
-                              || 1;
+            this.gain.value = this.GetVolume();
             $(this.slider.api).slider("value", this.gain.value);
         }
 
