@@ -4,7 +4,8 @@
 @import url("https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css");
 /* Styles */
 .ytscript-button {
-  display: inline-block;
+  display: block;
+  margin: auto;
   border: none;
   color: #fff;
   text-decoration: none;
@@ -64,7 +65,7 @@
   background-color: #565656;
 }
 
-.ytscript-slider-volume {
+.ytscript-slider-volume, .ytscript-slider-playback {
   position: absolute;
   left: 10px;
   margin: 0;
@@ -76,7 +77,7 @@
   margin-top: -3px;
 }
 
-.ytscript-slider-volume .ui-slider-range-min {
+.ytscript-slider-volume .ui-slider-range-min, .ytscript-slider-playback .ui-slider-range-min {
   height: 4px;
   width: 125px;
   position: absolute;
@@ -86,7 +87,7 @@
   outline: none;
 }
 
-.ytscript-slider-volume .ui-slider-handle {
+.ytscript-slider-volume .ui-slider-handle, .ytscript-slider-playback .ui-slider-handle {
   width: 13px;
   height: 13px;
   border-radius: 20px;
@@ -113,12 +114,35 @@
   margin-top: -6px;
 }
 
-.ytscript-slider-volume-container {
+.ytscript-slider-volume-container, .ytscript-slider-playback-container {
   width: 145px;
   height: 100%;
   display: inline-block;
   position: relative;
   margin: 0 auto;
+}
+
+.ytscript-slider-playback {
+  left: 0;
+  background-color: rgba(0, 0, 0, 0.2);
+  width: 100%;
+}
+
+.ytscript-slider-playback .ui-slider-range {
+  height: 100%;
+  position: absolute;
+  background-color: #db3861;
+}
+
+.ytscript-slider-playback .ui-slider-handle {
+  background-color: #464646;
+}
+
+.ytscript-slider-playback-container {
+  height: 35px;
+  display: block;
+  width: 100%;
+  margin-bottom: 10px;
 }
 
 .ytscript-panel-main {
@@ -251,25 +275,44 @@
           transform: rotateY(-540deg) rotateX(180deg);
 }
 
-.ytscript-controls-volume {
-  padding: 12px 10px;
+.ytscript-controls-volume, .ytscript-controls-playback {
+  padding: 15px 20px;
   text-align: center;
 }
 
-.ytscript-controls-playback {
-  padding: 12px 10px;
-  text-align: center;
+.ytscript-controls-playback .input-container {
+  width: 100%;
+  height: 30px;
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-pack: justify;
+      -ms-flex-pack: justify;
+          justify-content: space-between;
+  margin-bottom: 10px;
 }
 
-/* START TOOLTIP STYLES */
+.ytscript-controls-playback .input-container input {
+  float: left;
+  display: block;
+  width: 100px;
+  text-align: center;
+  font-family: "Montserrat", Arial, sans-serif;
+  font-size: 15px;
+  position: relative;
+  border: #dcdcdc 1px solid;
+}
+
+.ytscript-controls-playback .input-container input:first-child {
+  left: -10px;
+}
+
+.ytscript-controls-playback .input-container input:last-child {
+  right: -10px;
+}
+
 [tooltip] {
   position: relative;
-}
-
-/* Applies to all tooltips */
-[tooltip] {
-  /* FLOW: UP */
-  /* FLOW: DOWN */
 }
 
 [tooltip]::before, [tooltip]::after {
@@ -342,7 +385,6 @@
           transform: translate(-50%, 0.5em);
 }
 
-/* don't show empty tooltips */
 [tooltip='']::before, [tooltip='']::after {
   display: none !important;
 }
@@ -363,7 +405,6 @@
   }
 }
 
-/* Make the tooltips respond to hover and slide event*/
 [tooltip]:hover::before,
 [tooltip]:hover::after,
 .ui-state-active[tooltip]::before,
@@ -371,7 +412,6 @@
   display: block;
 }
 
-/* FX All The Things */
 .ui-state-active[tooltip]:not([flow])::before,
 .ui-state-active[tooltip]:not([flow])::after,
 .ui-state-active[tooltip][flow^="up"]::before,

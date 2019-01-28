@@ -2,7 +2,7 @@
 // @name         YTScript_test
 // @description  YouTube player enhancement
 // @author       michi-at
-// @version      0.1.922
+// @version      0.1.930
 // @updateURL    https://raw.githubusercontent.com/michi-at/YTScript/test/YTScript_test.meta.js
 // @downloadURL  https://raw.githubusercontent.com/michi-at/YTScript/test/YTScript_test.user.js
 // @match        *://www.youtube.com/*
@@ -18,7 +18,7 @@
 (function () {
     "use strict";
 
-    const DEBUG = false;
+    const DEBUG = true;
 
 
 
@@ -111,10 +111,7 @@
             target.appendChild(this.api);
             $(this.api).slider(options.widjetOptions);
 
-            this.api.children[1].setAttribute("tooltip", options.widjetOptions.value.toString());
-            $(this.api).on("slide slidechange", function (event, ui) {
-                this.children[1].setAttribute("tooltip", ui.value);
-            });
+            this.SetTooltip(options.widjetOptions);
 
             this.events = {
                 onFullscreenChange: {
@@ -123,6 +120,15 @@
                     eventListener: this.FullscreenChange.bind(this),
                     useCapture: false
                 }
+            }
+        }
+
+        SetTooltip({ value, values, range } = options) {
+            if (range === "min") {
+                this.api.children[1].setAttribute("tooltip", value || "");
+                $(this.api).on("slide slidechange", function (event, ui) {
+                    this.children[1].setAttribute("tooltip", ui.value);
+                });
             }
         }
 
@@ -181,6 +187,28 @@
         },
         EaseUp: function (t) {
             return t * t * (3 * t - 2);
+        },
+        SecondsToTimeString: function (seconds) {
+            let hours = Math.floor(seconds / 3600);
+            seconds -= hours * 3600;
+            let minutes = Math.floor(seconds / 60);
+            seconds -= minutes * 60;
+            let milliseconds = Math.round((seconds % 1) * 1000);
+            if (milliseconds === 1000) {
+                milliseconds = 0;
+                seconds = Math.round(seconds);
+            }
+            else {
+                seconds = Math.floor(seconds);
+            }	
+    
+            if (hours < 10) { hours = "0" + hours; }
+            if (minutes < 10) { minutes = "0" + minutes; }
+            if (seconds < 10) { seconds = "0" + seconds; }
+            if (milliseconds < 100) { milliseconds = "0" + milliseconds; }
+            if (milliseconds < 10) { milliseconds = "0" + milliseconds; }
+            return hours > 0 ? hours + ":" + minutes + ":" + seconds + "." + milliseconds
+                             : minutes + ":" + seconds + "." + milliseconds;
         }
     }
     /* End of Utils */
@@ -263,7 +291,7 @@
         }
 
         YtNavigateStarted(event) {
-
+            this.UpdateLocation();
         }
 
         YtNavigateFinished(event) {
@@ -287,11 +315,24 @@
             [, playlistId] = /(?:\?|&)list=([a-zA-Z0-9\-\_]+)/g.exec(location.search) || [, ""];
 
             this.location = {
-                pageType: location.pathname.length === 1 ? "browse" : location.pathname.substring(1),
+                pageType: this.GetPageType(location),
                 url: location.pathname + location.search,
                 videoId: videoId,
                 playlistId: playlistId
             };
+        }
+
+        IsValidLocation() {
+            if (this.location.pageType === "watch") {
+                return true;
+            }
+            else {
+                return false;
+            }
+        }
+
+        GetPageType(location) {
+            return location.pathname.indexOf("watch?") !== -1 ? "watch" : "browse";
         }
 
         LoadConfig(data) {
@@ -381,7 +422,9 @@
                     fromValue: this.container.renderedHeight,
                     toValue: 0,
                     easingFunction: Utils.EaseUp,
-                    completeFunction: () => this.SlideComplete(this.openMenuButton)
+                    completeFunction: () => {
+                        this.SlideComplete(this.openMenuButton);
+                    }
                 });
             }
             else {
@@ -390,7 +433,9 @@
                     fromValue: 0,
                     toValue: this.container.renderedHeight,
                     easingFunction: Utils.EaseDown,
-                    completeFunction: () => this.SlideComplete(this.openMenuButton)
+                    completeFunction: () => {
+                        this.SlideComplete(this.openMenuButton);
+                    }
                 });
             }
             this.container.classList.toggle("open");
@@ -457,6 +502,7 @@
                         easingFunction: Utils.Ease,
                         completeFunction: () => { 
                             this.SlideComplete(hideContentButton);
+                            componentContent.style.overflow = "";
                         }
                     });
                     this.Slide({
@@ -478,6 +524,7 @@
                         easingFunction: Utils.Ease,
                         completeFunction: () => { 
                             this.SlideComplete(hideContentButton);
+                            componentContent.style.overflow = "visible";
                         }
                     });
                     this.Slide({
@@ -528,8 +575,13 @@
         }
 
         LoadUI() {
+            if (!this.IsValidLocation()) {
+                return;
+            }
             let injectionTarget;
-            if ((injectionTarget = document.querySelector("ytd-watch-flexy #player")) && !this.root.api) {
+            if (!this.root.api
+                && (injectionTarget = document.querySelector("ytd-watch-flexy #player")))
+            {
                 injectionTarget.appendChild(this.root);
                 this.root.api = this;
             }
@@ -541,9 +593,6 @@
                 }
             }
         }
-
-        YtNavigateStarted(event) {}
-        YtNavigateFinished(event) {}
     }
 
     class VolumeControl extends UIComponent {
@@ -554,8 +603,13 @@
         }
 
         Load() {
+            if (!this.IsValidLocation()) {
+                return;
+            }
             let videoElement;
-            if ((videoElement = document.getElementsByClassName("html5-main-video")[0]) && !this.gain) {
+            if (!this.gain
+                && (videoElement = document.getElementsByClassName("html5-main-video")[0]))
+            {
                 let audioContext = new AudioContext();
                 let source = audioContext.createMediaElementSource(videoElement);
                 let gainNode = audioContext.createGain();
@@ -576,16 +630,25 @@
         }
 
         GetVolume() {
-            this.UpdateLocation();
             return    this.config.list[this.location.videoId]
                    && this.config.list[this.location.videoId].volume
                    || this.DEFAULT_VOLUME;
         }
 
+        GetVolumeByVideoId(videoId) {
+            return    this.config.list[videoId]
+                   && this.config.list[videoId].volume
+                   || this.DEFAULT_VOLUME;
+        }
+
         LoadUI() {
+            if (!this.IsValidLocation()) {
+                return;
+            }
             let injectionTarget;
-            if ((injectionTarget = document.querySelector("ytd-player .ytp-chrome-bottom " +
-                ".ytp-chrome-controls .ytp-left-controls")) && !this.slider)
+            if (!this.slider
+                && (injectionTarget = document.querySelector("ytd-player .ytp-chrome-bottom "
+                                      + ".ytp-chrome-controls .ytp-left-controls")))
             {
                 let sliderContainer = document.createElement("div");
 
@@ -604,8 +667,8 @@
                 injectionTarget.appendChild(sliderContainer);
             }
 
-            if ((injectionTarget = document.getElementsByClassName("ytscript-panel-main")[0]) &&
-                !this.controls)
+            if (!this.controls
+                && (injectionTarget = document.getElementsByClassName("ytscript-panel-main")[0]))
             {
                 this.controls = document.createElement("div");
                 this.controls.className = "ytscript-controls-volume";
@@ -644,13 +707,18 @@
 
         YtNavigateStarted(event) {
             if (event.detail.pageType === "watch") {
-                this.gain.value = this.GetVolume();
-                $(this.slider.api).slider("value", this.gain.value);
+                this.gain.value = this.GetVolumeByVideoId(event.detail.endpoint.watchendpoint.videoId);
+                this.UpdateUI();
             }
         }
 
         YtNavigateFinished(event) {
+            this.UpdateLocation();
             this.gain.value = this.GetVolume();
+            this.UpdateUI();
+        }
+
+        UpdateUI() {
             $(this.slider.api).slider("value", this.gain.value);
         }
 
@@ -669,13 +737,62 @@
             super();
         }
 
+        Load() {
+            if (!this.IsValidLocation()) {
+                return;
+            }
+            if (!this.player
+                && (this.player = document.getElementById("movie_player")))
+            {
+                
+            }
+
+            if (this.player) {
+                this.status.isLoaded = true;
+                if (DEBUG) {
+                    Log(`${this.name} has been loaded.`);
+                }
+            }
+        }
+
         LoadUI() {
+            if (!this.IsValidLocation()) {
+                return;
+            }
             let injectionTarget;
-            if ((injectionTarget = document.getElementsByClassName("ytscript-panel-main")[0]) &&
-                !this.controls)
+            if (this.player
+                && !this.controls
+                && (injectionTarget = document.getElementsByClassName("ytscript-panel-main")[0]))
             {
                 this.controls = document.createElement("div");
                 this.controls.className = "ytscript-controls-playback";
+
+                let sliderContainer = document.createElement("div");
+
+                let inputs = document.createElement("div");
+                inputs.className = "input-container";
+                let leftHandleInput = document.createElement("input");
+                let rightHandleInput = document.createElement("input");
+                leftHandleInput.type = rightHandleInput.type = "text";
+                inputs.appendChild(leftHandleInput);
+                inputs.appendChild(rightHandleInput);
+
+                this.slider = new Slider(sliderContainer, {
+                    className: "ytscript-slider-playback",
+                    widjetOptions: {
+                        min: 0,
+                        max: 100,
+                        values: [0, 100],
+                        range: true,
+                        step: 0.1,
+                        slide: function (event, ui) {
+                            console.log(event, ui);
+                        },
+                        stop: function (event, ui) {
+                            console.log(event, ui);
+                        }
+                    }
+                }).Initialize();
 
                 let clearConfigButton = document.createElement("button");
                 clearConfigButton.className = "ytscript-button";
@@ -683,6 +800,8 @@
                 clearConfigButton.insertAdjacentText("beforeend", "Clear config");
                 clearConfigButton.addEventListener("click", this.ClearConfig.bind(this));
 
+                this.controls.appendChild(sliderContainer);
+                this.controls.appendChild(inputs);
                 this.controls.appendChild(clearConfigButton);
 
                 injectionTarget.api.CreatePanelItem({
@@ -698,6 +817,18 @@
                     Log(`${this.name}'s UI has been loaded.`);
                 }
             }
+        }
+
+        GetTrimValues() {
+            return    this.config.list[this.location.videoId]
+                   && this.config.list[this.location.videoId].trim
+                   || {start}
+        }
+
+        GetTrimValuesByVideoId(videoId) {
+            return    this.config.list[videoId]
+                   && this.config.list[videoId].trim
+                   || { start: this.DEFAULT_START_VALUE, end: this.DEFAULT_END_VALUE };
         }
 
         LoadConfig(data) {
