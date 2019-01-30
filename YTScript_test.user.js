@@ -2,7 +2,7 @@
 // @name         YTScript_test
 // @description  YouTube player enhancement
 // @author       michi-at
-// @version      0.1.950
+// @version      0.1.960
 // @updateURL    https://raw.githubusercontent.com/michi-at/YTScript/test/YTScript_test.meta.js
 // @downloadURL  https://raw.githubusercontent.com/michi-at/YTScript/test/YTScript_test.user.js
 // @match        *://www.youtube.com/*
@@ -599,7 +599,7 @@
         constructor() {
             super();
 
-            this.DEFAULT_VOLUME = 1;
+            this.DEFAULT_VALUE = 1;
         }
 
         Load() {
@@ -638,7 +638,7 @@
         UpdateVolumeByVideoId(videoId) {
             this.gain.value =    this.config.list[videoId]
                               && this.config.list[videoId].volume
-                              || this.DEFAULT_VOLUME;
+                              || this.DEFAULT_VALUE;
         }
 
         LoadUI() {
@@ -742,6 +742,7 @@
         constructor() {
             super();
 
+            this.DEFAULT_VALUE = [0, 100];
             this.isProcessed = false;
         }
 
@@ -753,15 +754,21 @@
             if (!this.player
                 && (this.player = document.getElementById("movie_player")))
             {
-                this.videoDuration = this.player.getDuration();
                 this.UpdateTrimIntervalByVideoId(this.location.videoId);
-                this.player.seekTo(this.trimInterval.start);
-                this.isProcessed = true;
+                if (this.trimInterval) {
+                    this.player.seekTo(this.trimInterval[0]);
+                    this.isProcessed = true;
+                }
             }
 
             !this.videoElement && (this.videoElement = document.getElementsByClassName("html5-main-video")[0]);
 
             if (this.player && this.videoElement) {
+                this.videoElement.addEventListener("durationchange", () => {
+                    this.LinearFit = Utils.LinearInterpolation(0, 0, 100, this.videoElement.getDuration());
+                    this.InverseLinearFit = Utils.LinearInterpolation(0, 0, this.videoElement.getDuration(), 100);
+                });
+
                 this.status.isLoaded = true;
                 if (DEBUG) {
                     Log(`${this.name} has been loaded.`);
@@ -776,12 +783,11 @@
 
         UpdateTrimIntervalByVideoId(videoId) {
             this.trimInterval =    this.config.list[videoId]
-                                && this.config.list[videoId].trim
-                                || (this.DEFAULT_INTERVAL = this.SetInterval(0, this.videoDuration));
+                                && this.config.list[videoId].trim;
         }
 
-        SetInterval(startSeconds, endSeconds) {
-            return { start: startSeconds, end: endSeconds };
+        GetInversedTrimInterval() {
+            return this.trimInterval && this.trimInterval.map(x => this.InverseLinearFit(x));
         }
 
         LoadUI() {
@@ -790,33 +796,39 @@
             }
 
             let injectionTarget;
-            if (this.player
+            if (this.videoElement
+                && this.LinearFit
                 && !this.controls
                 && (injectionTarget = document.getElementsByClassName("ytscript-panel-main")[0]))
             {
+                let interval = this.GetInversedTrimInterval() || this.DEFAULT_VALUE;
+
                 this.controls = document.createElement("div");
                 this.controls.className = "ytscript-controls-trim";
 
                 let sliderContainer = document.createElement("div");
 
-                let inputs = document.createElement("div");
-                inputs.className = "input-container";
+                this.inputs = document.createElement("div");
+                this.inputs.className = "input-container";
                 let leftHandleInput = document.createElement("input");
                 let rightHandleInput = document.createElement("input");
                 leftHandleInput.type = rightHandleInput.type = "text";
-                inputs.appendChild(leftHandleInput);
-                inputs.appendChild(rightHandleInput);
+
+                this.inputs.appendChild(leftHandleInput);
+                this.inputs.appendChild(rightHandleInput);
+
+                this.SetHandles(interval);
 
                 this.slider = new Slider(sliderContainer, {
                     className: "ytscript-slider-trim",
                     widjetOptions: {
                         min: 0,
-                        max: this.videoDuration,
-                        values: [this.trimInterval.start, this.trimInterval.end],
+                        max: 100,
+                        values: interval,
                         range: true,
                         step: 0.1,
-                        slide: function (event, ui) {
-                            
+                        slide: (event, ui) => {
+                            this.SetHandles(ui.values);
                         },
                         stop: this.IntervalConfirmed.bind(this)
                     }
@@ -829,7 +841,7 @@
                 clearConfigButton.addEventListener("click", this.ClearConfig.bind(this));
 
                 this.controls.appendChild(sliderContainer);
-                this.controls.appendChild(inputs);
+                this.controls.appendChild(this.inputs);
                 this.controls.appendChild(clearConfigButton);
 
                 injectionTarget.api.CreatePanelItem({
@@ -847,8 +859,13 @@
             }
         }
 
+        SetHandles(values) {
+            let [a, b] = this.inputs.children;
+            [a.value, b.value] = values.map(x => Utils.SecondsToTimeString(this.LinearFit(x)));
+        }
+
         IntervalConfirmed(event, ui) {
-            this.config.list[this.location.videoId] = { trim: this.SetInterval(ui.values[0], ui.values[1]) };
+            this.config.list[this.location.videoId] = { trim: ui.values.map(x => this.LinearFit(x)) };
             this.SaveConfig(this.config);
         }
 
@@ -862,22 +879,25 @@
         UpdateControl(videoId) {
             videoId && this.UpdateTrimIntervalByVideoId(videoId)
                     || this.UpdateTrimInterval();
-            this.UpdatePlayer();
+            this.trimInterval && this.UpdatePlayer();
             this.UpdateUI();
         }
 
         UpdatePlayer() {
             this.videoElement.onprogress = () => {
-                this.player.seekTo(this.trimInterval.start);
+                this.player.seekTo(this.trimInterval[0]);
                 this.videoElement.onprogress = null;
             };
         }
 
         UpdateUI() {
-            $(this.slider.api).slider("values", [this.trimInterval.start, this.trimInterval.end])
+            let interval = this.GetInversedTrimInterval() || this.DEFAULT_VALUE;
+            $(this.slider.api).slider("values", interval)
+            this.SetHandles(interval);
         }
 
         YtNavigateFinished(event) {
+            this.UpdateUI();
             if (!this.isProcessed) {
                 this.UpdateControl();
             }
