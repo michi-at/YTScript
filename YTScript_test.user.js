@@ -2,7 +2,7 @@
 // @name         YTScript_test
 // @description  YouTube player enhancement
 // @author       michi-at
-// @version      0.2.0
+// @version      0.2.1
 // @updateURL    https://raw.githubusercontent.com/michi-at/YTScript/test/YTScript_test.meta.js
 // @downloadURL  https://raw.githubusercontent.com/michi-at/YTScript/test/YTScript_test.user.js
 // @match        *://www.youtube.com/*
@@ -785,7 +785,7 @@
         }
 
         OnVideoProgress() {
-            if (this.trimInterval) {
+            if (this.trimInterval && this.trimInterval[1] !== this.DEFAULT_VALUE[1]) {
                 if (this.videoElement.getCurrentTime() >= this.trimInterval[1]) {
                     this.videoElement.loop ? this.player.seekTo(this.trimInterval[0])
                                         : this.player.nextVideo();
