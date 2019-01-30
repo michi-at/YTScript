@@ -2,7 +2,7 @@
 // @name         YTScript_test
 // @description  YouTube player enhancement
 // @author       michi-at
-// @version      0.1.960
+// @version      0.2.0
 // @updateURL    https://raw.githubusercontent.com/michi-at/YTScript/test/YTScript_test.meta.js
 // @downloadURL  https://raw.githubusercontent.com/michi-at/YTScript/test/YTScript_test.user.js
 // @match        *://www.youtube.com/*
@@ -18,7 +18,7 @@
 (function () {
     "use strict";
 
-    const DEBUG = true;
+    const DEBUG = false;
 
 
 
@@ -764,15 +764,33 @@
             !this.videoElement && (this.videoElement = document.getElementsByClassName("html5-main-video")[0]);
 
             if (this.player && this.videoElement) {
+                this.WatchVideoProgress();
+                
                 this.videoElement.addEventListener("durationchange", () => {
-                    this.LinearFit = Utils.LinearInterpolation(0, 0, 100, this.videoElement.getDuration());
-                    this.InverseLinearFit = Utils.LinearInterpolation(0, 0, this.videoElement.getDuration(), 100);
+                    this.LinearFit = Utils.LinearInterpolation(this.DEFAULT_VALUE[0], 0,
+                                                               this.DEFAULT_VALUE[1], this.videoElement.getDuration());
+                    this.InverseLinearFit = Utils.LinearInterpolation(0, this.DEFAULT_VALUE[0],
+                                                               this.videoElement.getDuration(), this.DEFAULT_VALUE[1]);
                 });
 
                 this.status.isLoaded = true;
                 if (DEBUG) {
                     Log(`${this.name} has been loaded.`);
                 }
+            }
+        }
+
+        WatchVideoProgress() {
+            this.animationFrameId = requestAnimationFrame(this.OnVideoProgress.bind(this));
+        }
+
+        OnVideoProgress() {
+            if (this.trimInterval) {
+                if (this.videoElement.getCurrentTime() >= this.trimInterval[1]) {
+                    this.videoElement.loop ? this.player.seekTo(this.trimInterval[0])
+                                        : this.player.nextVideo();
+                }
+                this.WatchVideoProgress();
             }
         }
 
@@ -822,8 +840,8 @@
                 this.slider = new Slider(sliderContainer, {
                     className: "ytscript-slider-trim",
                     widjetOptions: {
-                        min: 0,
-                        max: 100,
+                        min: this.DEFAULT_VALUE[0],
+                        max: this.DEFAULT_VALUE[1],
                         values: interval,
                         range: true,
                         step: 0.1,
@@ -865,7 +883,17 @@
         }
 
         IntervalConfirmed(event, ui) {
-            this.config.list[this.location.videoId] = { trim: ui.values.map(x => this.LinearFit(x)) };
+            let interval = ui.values.map(x => this.LinearFit(x));
+
+            if (interval[0] === this.DEFAULT_VALUE[0] && interval[1] === this.DEFAULT_VALUE[1]) {
+                delete this.config[this.location.videoId];
+            }
+            else {
+                this.config.list[this.location.videoId] = { trim: interval };
+                this.trimInterval = interval;
+                this.WatchVideoProgress();
+            }
+
             this.SaveConfig(this.config);
         }
 
@@ -884,6 +912,8 @@
         }
 
         UpdatePlayer() {
+            this.WatchVideoProgress();
+
             this.videoElement.onprogress = () => {
                 this.player.seekTo(this.trimInterval[0]);
                 this.videoElement.onprogress = null;
