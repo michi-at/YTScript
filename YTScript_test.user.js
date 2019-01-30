@@ -2,7 +2,7 @@
 // @name         YTScript_test
 // @description  YouTube player enhancement
 // @author       michi-at
-// @version      0.1.930
+// @version      0.1.950
 // @updateURL    https://raw.githubusercontent.com/michi-at/YTScript/test/YTScript_test.meta.js
 // @downloadURL  https://raw.githubusercontent.com/michi-at/YTScript/test/YTScript_test.user.js
 // @match        *://www.youtube.com/*
@@ -582,7 +582,7 @@
             if (!this.root.api
                 && (injectionTarget = document.querySelector("ytd-watch-flexy #player")))
             {
-                injectionTarget.appendChild(this.root);
+                injectionTarget.insertAdjacentElement("afterend", this.root);
                 this.root.api = this;
             }
 
@@ -606,6 +606,7 @@
             if (this.IsNotValidLocation()) {
                 return;
             }
+
             let videoElement;
             if (!this.gain
                 && (videoElement = document.getElementsByClassName("html5-main-video")[0]))
@@ -615,7 +616,7 @@
                 let gainNode = audioContext.createGain();
                 this.gain = gainNode.gain;
 
-                this.gain.value = this.GetVolume();
+                this.UpdateVolume();
 
                 gainNode.connect(audioContext.destination);
                 source.connect(gainNode);
@@ -629,22 +630,25 @@
             }
         }
 
-        GetVolume() {
-            return this.GetVolumeByVideoId(this.location.videoId);
+        UpdateVolume() {
+            this.UpdateLocation();
+            this.UpdateVolumeByVideoId(this.location.videoId);
         }
 
-        GetVolumeByVideoId(videoId) {
-            return    this.config.list[videoId]
-                   && this.config.list[videoId].volume
-                   || this.DEFAULT_VOLUME;
+        UpdateVolumeByVideoId(videoId) {
+            this.gain.value =    this.config.list[videoId]
+                              && this.config.list[videoId].volume
+                              || this.DEFAULT_VOLUME;
         }
 
         LoadUI() {
             if (this.IsNotValidLocation()) {
                 return;
             }
+
             let injectionTarget;
-            if (!this.slider
+            if (this.gain
+                && !this.slider
                 && (injectionTarget = document.querySelector("ytd-player .ytp-chrome-bottom "
                                       + ".ytp-chrome-controls .ytp-left-controls")))
             {
@@ -655,7 +659,7 @@
                     widjetOptions: {
                         min: 0,
                         max: 5,
-                        value: this.GetVolume(),
+                        value: this.gain.value,
                         range: "min",
                         step: 0.05,
                         slide: this.ChangeVolume.bind(this),
@@ -705,19 +709,22 @@
 
         YtNavigateStarted(event) {
             if (event.detail.pageType === "watch") {
-                this.gain.value = this.GetVolumeByVideoId(event.detail.endpoint.watchEndpoint.videoId);
-                this.UpdateUI();
+                this.UpdateControl();
             }
         }
 
-        YtNavigateFinished(event) {
-            this.UpdateLocation();
-            this.gain.value = this.GetVolume();
+        UpdateControl(videoId) {
+            videoId && this.UpdateVolumeByVideoId(videoId)
+                    || this.UpdateVolume();
             this.UpdateUI();
         }
 
         UpdateUI() {
             $(this.slider.api).slider("value", this.gain.value);
+        }
+
+        YtNavigateFinished(event) {
+            this.UpdateControl();
         }
 
         LoadConfig(data) {
@@ -727,33 +734,50 @@
 
         ClearConfig() {
             this.SaveConfig({ list: {} });
+            this.UpdateControl();
         }
     }
 
     class TrimControl extends UIComponent {
         constructor() {
             super();
+
+            this.isProcessed = false;
         }
 
         Load() {
             if (this.IsNotValidLocation()) {
                 return;
             }
+
             if (!this.player
                 && (this.player = document.getElementById("movie_player")))
             {
-                this.player.addEventListener("ready", function (event) { console.log(event); console.log("onPlayerReady") });
                 this.videoDuration = this.player.getDuration();
-                this.trimInterval = this.GetTrimInterval();
+                this.UpdateTrimIntervalByVideoId(this.location.videoId);
                 this.player.seekTo(this.trimInterval.start);
+                this.isProcessed = true;
             }
 
-            if (this.player) {
+            !this.videoElement && (this.videoElement = document.getElementsByClassName("html5-main-video")[0]);
+
+            if (this.player && this.videoElement) {
                 this.status.isLoaded = true;
                 if (DEBUG) {
                     Log(`${this.name} has been loaded.`);
                 }
             }
+        }
+
+        UpdateTrimInterval() {
+            this.UpdateLocation();
+            this.UpdateTrimIntervalByVideoId(this.location.videoId);
+        }
+
+        UpdateTrimIntervalByVideoId(videoId) {
+            this.trimInterval =    this.config.list[videoId]
+                                && this.config.list[videoId].trim
+                                || (this.DEFAULT_INTERVAL = this.SetInterval(0, this.videoDuration));
         }
 
         SetInterval(startSeconds, endSeconds) {
@@ -764,6 +788,7 @@
             if (this.IsNotValidLocation()) {
                 return;
             }
+
             let injectionTarget;
             if (this.player
                 && !this.controls
@@ -791,7 +816,7 @@
                         range: true,
                         step: 0.1,
                         slide: function (event, ui) {
-                            console.log(event, ui);
+                            
                         },
                         stop: this.IntervalConfirmed.bind(this)
                     }
@@ -829,14 +854,23 @@
 
         YtNavigateStarted(event) {
             if (event.detail.pageType === "watch") {
-                this.trimInterval = this.GetTrimIntervalByVideoId(event.detail.endpoint.watchEndpoint.videoId);
-                this.UpdatePlayerState();
-                this.UpdateUI();
+                this.UpdateControl(event.detail.endpoint.watchEndpoint.videoId);
+                this.isProcessed = true;
             }
         }
 
-        UpdatePlayerState() {
-            this.player.seekTo(this.trimInterval.start);
+        UpdateControl(videoId) {
+            videoId && this.UpdateTrimIntervalByVideoId(videoId)
+                    || this.UpdateTrimInterval();
+            this.UpdatePlayer();
+            this.UpdateUI();
+        }
+
+        UpdatePlayer() {
+            this.videoElement.onprogress = () => {
+                this.player.seekTo(this.trimInterval.start);
+                this.videoElement.onprogress = null;
+            };
         }
 
         UpdateUI() {
@@ -844,17 +878,10 @@
         }
 
         YtNavigateFinished(event) {
-
-        }
-
-        GetTrimInterval() {
-            return this.GetTrimIntervalByVideoId(this.location.videoId);
-        }
-
-        GetTrimIntervalByVideoId(videoId) {
-            return    this.config.list[videoId]
-                   && this.config.list[videoId].trim
-                   || (this.DEFAULT_INTERVAL = this.SetInterval(0, this.videoDuration));
+            if (!this.isProcessed) {
+                this.UpdateControl();
+            }
+            this.isProcessed = false;
         }
 
         LoadConfig(data) {
@@ -864,6 +891,8 @@
 
         ClearConfig() {
             this.SaveConfig({ list: {} });
+            this.UpdateTrimInterval();
+            this.UpdateUI();
         }
     }
     /* End of Components */
