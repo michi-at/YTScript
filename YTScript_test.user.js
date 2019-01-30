@@ -2,7 +2,7 @@
 // @name         YTScript_test
 // @description  YouTube player enhancement
 // @author       michi-at
-// @version      0.2.104
+// @version      0.2.105
 // @updateURL    https://raw.githubusercontent.com/michi-at/YTScript/test/YTScript_test.meta.js
 // @downloadURL  https://raw.githubusercontent.com/michi-at/YTScript/test/YTScript_test.user.js
 // @match        *://www.youtube.com/*
@@ -911,7 +911,7 @@
 
         UpdateControl(videoId) {
             videoId && this.UpdateTrimIntervalByVideoId(videoId)
-                    || this.UpdateTrimInterval();
+                    || !videoId && this.UpdateTrimInterval();
             this.trimInterval && this.UpdatePlayer();
             this.UpdateUI();
         }
