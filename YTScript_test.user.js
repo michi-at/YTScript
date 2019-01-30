@@ -2,7 +2,7 @@
 // @name         YTScript_test
 // @description  YouTube player enhancement
 // @author       michi-at
-// @version      0.2.1
+// @version      0.2.101
 // @updateURL    https://raw.githubusercontent.com/michi-at/YTScript/test/YTScript_test.meta.js
 // @downloadURL  https://raw.githubusercontent.com/michi-at/YTScript/test/YTScript_test.user.js
 // @match        *://www.youtube.com/*
@@ -785,7 +785,7 @@
         }
 
         OnVideoProgress() {
-            if (this.trimInterval && this.trimInterval[1] !== this.DEFAULT_VALUE[1]) {
+            if (this.trimInterval && this.InverseLinearFit(this.trimInterval[1]) !== this.DEFAULT_VALUE[1]) {
                 if (this.videoElement.getCurrentTime() >= this.trimInterval[1]) {
                     this.videoElement.loop ? this.player.seekTo(this.trimInterval[0])
                                         : this.player.nextVideo();
@@ -885,7 +885,7 @@
         IntervalConfirmed(event, ui) {
             let interval = ui.values.map(x => this.LinearFit(x));
 
-            if (interval[0] === this.DEFAULT_VALUE[0] && interval[1] === this.DEFAULT_VALUE[1]) {
+            if (ui.values[0] === this.DEFAULT_VALUE[0] && ui.values[1] === this.DEFAULT_VALUE[1]) {
                 delete this.config[this.location.videoId];
             }
             else {
