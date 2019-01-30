@@ -322,17 +322,17 @@
             };
         }
 
-        IsValidLocation() {
+        IsNotValidLocation() {
             if (this.location.pageType === "watch") {
-                return true;
+                return false;
             }
             else {
-                return false;
+                return true;
             }
         }
 
         GetPageType(location) {
-            return location.pathname.indexOf("watch?") !== -1 ? "watch" : "browse";
+            return location.pathname.indexOf("watch") !== -1 ? "watch" : "browse";
         }
 
         LoadConfig(data) {
@@ -495,6 +495,7 @@
                 contentNode.renderedHeight = contentNode.renderedHeight || contentNode.GetRenderedHeight();
                 if (componentContent.classList.contains("open")) {
                     this.container.renderedHeight -= contentNode.renderedHeight;
+                    componentContent.style.overflow = "";
                     this.Slide({
                         element: componentContent,
                         fromValue: contentNode.renderedHeight,
@@ -502,7 +503,6 @@
                         easingFunction: Utils.Ease,
                         completeFunction: () => { 
                             this.SlideComplete(hideContentButton);
-                            componentContent.style.overflow = "";
                         }
                     });
                     this.Slide({
@@ -575,7 +575,7 @@
         }
 
         LoadUI() {
-            if (!this.IsValidLocation()) {
+            if (this.IsNotValidLocation()) {
                 return;
             }
             let injectionTarget;
@@ -603,7 +603,7 @@
         }
 
         Load() {
-            if (!this.IsValidLocation()) {
+            if (this.IsNotValidLocation()) {
                 return;
             }
             let videoElement;
@@ -630,9 +630,7 @@
         }
 
         GetVolume() {
-            return    this.config.list[this.location.videoId]
-                   && this.config.list[this.location.videoId].volume
-                   || this.DEFAULT_VOLUME;
+            return this.GetVolumeByVideoId(this.location.videoId);
         }
 
         GetVolumeByVideoId(videoId) {
@@ -642,7 +640,7 @@
         }
 
         LoadUI() {
-            if (!this.IsValidLocation()) {
+            if (this.IsNotValidLocation()) {
                 return;
             }
             let injectionTarget;
@@ -707,7 +705,7 @@
 
         YtNavigateStarted(event) {
             if (event.detail.pageType === "watch") {
-                this.gain.value = this.GetVolumeByVideoId(event.detail.endpoint.watchendpoint.videoId);
+                this.gain.value = this.GetVolumeByVideoId(event.detail.endpoint.watchEndpoint.videoId);
                 this.UpdateUI();
             }
         }
@@ -732,19 +730,22 @@
         }
     }
 
-    class PlaybackControl extends UIComponent {
+    class TrimControl extends UIComponent {
         constructor() {
             super();
         }
 
         Load() {
-            if (!this.IsValidLocation()) {
+            if (this.IsNotValidLocation()) {
                 return;
             }
             if (!this.player
                 && (this.player = document.getElementById("movie_player")))
             {
-                
+                this.player.addEventListener("ready", function (event) { console.log(event); console.log("onPlayerReady") });
+                this.videoDuration = this.player.getDuration();
+                this.trimInterval = this.GetTrimInterval();
+                this.player.seekTo(this.trimInterval.start);
             }
 
             if (this.player) {
@@ -755,8 +756,12 @@
             }
         }
 
+        SetInterval(startSeconds, endSeconds) {
+            return { start: startSeconds, end: endSeconds };
+        }
+
         LoadUI() {
-            if (!this.IsValidLocation()) {
+            if (this.IsNotValidLocation()) {
                 return;
             }
             let injectionTarget;
@@ -765,7 +770,7 @@
                 && (injectionTarget = document.getElementsByClassName("ytscript-panel-main")[0]))
             {
                 this.controls = document.createElement("div");
-                this.controls.className = "ytscript-controls-playback";
+                this.controls.className = "ytscript-controls-trim";
 
                 let sliderContainer = document.createElement("div");
 
@@ -778,19 +783,17 @@
                 inputs.appendChild(rightHandleInput);
 
                 this.slider = new Slider(sliderContainer, {
-                    className: "ytscript-slider-playback",
+                    className: "ytscript-slider-trim",
                     widjetOptions: {
                         min: 0,
-                        max: 100,
-                        values: [0, 100],
+                        max: this.videoDuration,
+                        values: [this.trimInterval.start, this.trimInterval.end],
                         range: true,
                         step: 0.1,
                         slide: function (event, ui) {
                             console.log(event, ui);
                         },
-                        stop: function (event, ui) {
-                            console.log(event, ui);
-                        }
+                        stop: this.IntervalConfirmed.bind(this)
                     }
                 }).Initialize();
 
@@ -806,7 +809,7 @@
 
                 injectionTarget.api.CreatePanelItem({
                     componentName: this.name,
-                    titleIconHtml: '<i class="fa fa-play-circle"></i>',
+                    titleIconHtml: '<i class="fa fa-scissors"></i>',
                     contentNode: this.controls
                 });
             }
@@ -819,16 +822,39 @@
             }
         }
 
-        GetTrimValues() {
-            return    this.config.list[this.location.videoId]
-                   && this.config.list[this.location.videoId].trim
-                   || {start}
+        IntervalConfirmed(event, ui) {
+            this.config.list[this.location.videoId] = { trim: this.SetInterval(ui.values[0], ui.values[1]) };
+            this.SaveConfig(this.config);
         }
 
-        GetTrimValuesByVideoId(videoId) {
+        YtNavigateStarted(event) {
+            if (event.detail.pageType === "watch") {
+                this.trimInterval = this.GetTrimIntervalByVideoId(event.detail.endpoint.watchEndpoint.videoId);
+                this.UpdatePlayerState();
+                this.UpdateUI();
+            }
+        }
+
+        UpdatePlayerState() {
+            this.player.seekTo(this.trimInterval.start);
+        }
+
+        UpdateUI() {
+            $(this.slider.api).slider("values", [this.trimInterval.start, this.trimInterval.end])
+        }
+
+        YtNavigateFinished(event) {
+
+        }
+
+        GetTrimInterval() {
+            return this.GetTrimIntervalByVideoId(this.location.videoId);
+        }
+
+        GetTrimIntervalByVideoId(videoId) {
             return    this.config.list[videoId]
                    && this.config.list[videoId].trim
-                   || { start: this.DEFAULT_START_VALUE, end: this.DEFAULT_END_VALUE };
+                   || (this.DEFAULT_INTERVAL = this.SetInterval(0, this.videoDuration));
         }
 
         LoadConfig(data) {
@@ -845,7 +871,7 @@
 
 
     manager.AddComponent(new ComponentPanel())
-           .AddComponent(new PlaybackControl())
+           .AddComponent(new TrimControl())
            .AddComponent(new VolumeControl())
            .Initialize();
 })();
