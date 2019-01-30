@@ -2,7 +2,7 @@
 // @name         YTScript_test
 // @description  YouTube player enhancement
 // @author       michi-at
-// @version      0.2.105
+// @version      0.2.106
 // @updateURL    https://raw.githubusercontent.com/michi-at/YTScript/test/YTScript_test.meta.js
 // @downloadURL  https://raw.githubusercontent.com/michi-at/YTScript/test/YTScript_test.user.js
 // @match        *://www.youtube.com/*
@@ -67,6 +67,7 @@
             this.components[component.name] = component;
             this.config[component.name] = this.config[component.name] || {};
             component.LoadConfig(this.config[component.name]);
+            component.index = Object.keys(this.components).length;
             this.WatchComponentConfig(component);
 
             return this;
@@ -323,6 +324,7 @@
         }
 
         IsNotValidLocation() {
+            this.UpdateLocation();
             if (this.location.pageType === "watch") {
                 return false;
             }
@@ -385,6 +387,10 @@
 
         LoadUI() {
             this.status.isUILoaded = true;
+        }
+
+        IsComponentReady() {
+            return this.status.isLoaded && this.status.isUILoaded;
         }
     }
 
@@ -458,12 +464,13 @@
             element.classList.toggle("open");
         }
 
-        CreatePanelItem({ componentName, titleIconHtml, contentNode }) {
+        CreatePanelItem({ componentName, componentIndex, titleIconHtml, contentNode }) {
             componentName = componentName.replace(/(\B[A-Z]+?(?=[A-Z][^A-Z])|\B[A-Z]+?(?=[^A-Z]))/, " $1")
                 .replace(/(\S*)(.*\S*.*)/, '<span class="first">$1</span>$2');
 
             let componentMenu = document.createElement("div");
             componentMenu.className = "component-menu";
+            componentMenu.index = componentIndex;
             componentMenu.GetRenderedHeight = this.GetRenderedHeight(componentMenu);
 
             let componentTitle = document.createElement("div");
@@ -548,6 +555,13 @@
             componentMenu.appendChild(componentTitle);
             componentMenu.appendChild(componentContent);
 
+            if (this.container.children.length > 0) {
+                let lastElement = this.container.children[this.container.children.length - 1];
+                if (componentMenu.index < lastElement.index) {
+                    this.container.insertBefore(componentMenu, lastElement);
+                    return;
+                }
+            }
             this.container.appendChild(componentMenu);
         }
 
@@ -685,6 +699,7 @@
 
                 injectionTarget.api.CreatePanelItem({
                     componentName: this.name,
+                    componentIndex: this.index,
                     titleIconHtml: '<i class="fa fa-volume-up"></i>',
                     contentNode: this.controls
                 });
@@ -708,8 +723,10 @@
         }
 
         YtNavigateStarted(event) {
-            if (event.detail.pageType === "watch") {
-                this.UpdateControl();
+            if (this.IsComponentReady()) {
+                if (event.detail.pageType === "watch") {
+                    this.UpdateControl();
+                }
             }
         }
 
@@ -724,7 +741,9 @@
         }
 
         YtNavigateFinished(event) {
-            this.UpdateControl();
+            if (this.IsComponentReady()) {
+                this.UpdateControl();
+            }
         }
 
         LoadConfig(data) {
@@ -867,6 +886,7 @@
 
                 injectionTarget.api.CreatePanelItem({
                     componentName: this.name,
+                    componentIndex: this.index,
                     titleIconHtml: '<i class="fa fa-scissors"></i>',
                     contentNode: this.controls
                 });
@@ -902,10 +922,12 @@
         }
 
         YtNavigateStarted(event) {
-            if (event.detail.pageType === "watch") {
-                this.location.videoId = event.detail.endpoint.watchEndpoint.videoId;
-                this.UpdateControl(this.location.videoId);
-                this.isProcessed = true;
+            if(this.IsComponentReady()) {
+                if (event.detail.pageType === "watch") {
+                    this.location.videoId = event.detail.endpoint.watchEndpoint.videoId;
+                    this.UpdateControl(this.location.videoId);
+                    this.isProcessed = true;
+                }
             }
         }
 
@@ -932,11 +954,13 @@
         }
 
         YtNavigateFinished(event) {
-            this.UpdateUI();
-            if (!this.isProcessed) {
-                this.UpdateControl();
+            if (this.IsComponentReady()) {
+                this.UpdateUI();
+                if (!this.isProcessed) {
+                    this.UpdateControl();
+                }
+                this.isProcessed = false;
             }
-            this.isProcessed = false;
         }
 
         LoadConfig(data) {
