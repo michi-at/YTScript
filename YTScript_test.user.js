@@ -2,7 +2,7 @@
 // @name         YTScript_test
 // @description  YouTube player enhancement
 // @author       michi-at
-// @version      0.2.106
+// @version      0.2.107
 // @updateURL    https://raw.githubusercontent.com/michi-at/YTScript/test/YTScript_test.meta.js
 // @downloadURL  https://raw.githubusercontent.com/michi-at/YTScript/test/YTScript_test.user.js
 // @match        *://www.youtube.com/*
@@ -909,7 +909,7 @@
             let interval = ui.values.map(x => this.LinearFit(x));
 
             if (ui.values[0] === this.DEFAULT_VALUE[0] && ui.values[1] === this.DEFAULT_VALUE[1]) {
-                delete this.config[this.location.videoId];
+                delete this.config.list[this.location.videoId];
                 this.trimInterval = undefined;
             }
             else {
