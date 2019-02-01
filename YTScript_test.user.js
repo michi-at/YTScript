@@ -2,7 +2,7 @@
 // @name         YTScript_test
 // @description  YouTube player enhancement
 // @author       michi-at
-// @version      0.2.107
+// @version      0.2.108
 // @updateURL    https://raw.githubusercontent.com/michi-at/YTScript/test/YTScript_test.meta.js
 // @downloadURL  https://raw.githubusercontent.com/michi-at/YTScript/test/YTScript_test.user.js
 // @match        *://www.youtube.com/*
@@ -555,14 +555,11 @@
             componentMenu.appendChild(componentTitle);
             componentMenu.appendChild(componentContent);
 
-            if (this.container.children.length > 0) {
-                let lastElement = this.container.children[this.container.children.length - 1];
-                if (componentMenu.index < lastElement.index) {
-                    this.container.insertBefore(componentMenu, lastElement);
-                    return;
-                }
-            }
-            this.container.appendChild(componentMenu);
+            let children = [...this.container.children];
+            let point = children.find(e => {
+               return e.index > componentMenu.index;
+            });
+            this.container.insertBefore(componentMenu, point);
         }
 
         CalculateContainerHeight() {
