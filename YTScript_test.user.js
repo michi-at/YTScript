@@ -2,7 +2,7 @@
 // @name         YTScript_test
 // @description  YouTube player enhancement
 // @author       michi-at
-// @version      0.2.108
+// @version      0.2.109
 // @updateURL    https://raw.githubusercontent.com/michi-at/YTScript/test/YTScript_test.meta.js
 // @downloadURL  https://raw.githubusercontent.com/michi-at/YTScript/test/YTScript_test.user.js
 // @match        *://www.youtube.com/*
@@ -938,9 +938,9 @@
         UpdatePlayer() {
             this.WatchVideoProgress();
 
-            this.videoElement.onprogress = () => {
+            this.videoElement.onloadeddata = () => {
                 this.player.seekTo(this.trimInterval[0]);
-                this.videoElement.onprogress = null;
+                this.videoElement.onloadeddata = null;
             };
         }
 
