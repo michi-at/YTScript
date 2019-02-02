@@ -589,6 +589,7 @@
             if (this.IsNotValidLocation()) {
                 return;
             }
+            
             let injectionTarget;
             if (!this.root.api
                 && (injectionTarget = document.querySelector("ytd-watch-flexy #player")))
