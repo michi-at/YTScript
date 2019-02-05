@@ -2,7 +2,7 @@
 // @name         YTScript_test
 // @description  YouTube player enhancement
 // @author       michi-at
-// @version      0.2.109
+// @version      0.2.110
 // @updateURL    https://raw.githubusercontent.com/michi-at/YTScript/test/YTScript_test.meta.js
 // @downloadURL  https://raw.githubusercontent.com/michi-at/YTScript/test/YTScript_test.user.js
 // @match        *://www.youtube.com/*
@@ -245,13 +245,13 @@
                 onYtNavigateStart: {
                     eventTarget: window,
                     eventName: "yt-navigate-start",
-                    eventListener: this.YtNavigateStarted.bind(this),
+                    eventListener: this.DoJobIfReady(this.YtNavigateStarted),
                     useCapture: false
                 },
                 onYtNavigateFinish: {
                     eventTarget: window,
                     eventName: "yt-navigate-finish",
-                    eventListener: this.YtNavigateFinished.bind(this),
+                    eventListener: this.DoJobIfReady(this.YtNavigateFinished),
                     useCapture: false
                 }
             };
@@ -289,6 +289,18 @@
         StopListening(event) {
             let info = event.detail;
             info.eventTarget.removeEventListener(info.eventName, info.eventListener, info.useCapture);
+        }
+
+        IsComponentReady() {
+            return this.status.isLoaded;
+        }
+
+        DoJobIfReady(callback) {
+            return (event) => {
+                if (this.IsComponentReady()) {
+                    callback.call(this, event);
+                }
+            }
         }
 
         YtNavigateStarted(event) {
@@ -619,12 +631,11 @@
                 return;
             }
 
-            let videoElement;
             if (!this.gain
-                && (videoElement = document.getElementsByClassName("html5-main-video")[0]))
+                && (this.videoElement = document.getElementsByClassName("html5-main-video")[0]))
             {
                 let audioContext = new AudioContext();
-                let source = audioContext.createMediaElementSource(videoElement);
+                let source = audioContext.createMediaElementSource(this.videoElement);
                 let gainNode = audioContext.createGain();
                 this.gain = gainNode.gain;
 
@@ -721,10 +732,9 @@
         }
 
         YtNavigateStarted(event) {
-            if (this.IsComponentReady()) {
-                if (event.detail.pageType === "watch") {
-                    this.UpdateControl();
-                }
+            if (event.detail.pageType === "watch") {
+                this.location.videoId = event.detail.endpoint.watchEndpoint.videoId;
+                this.UpdateControl(this.location.videoId);
             }
         }
 
@@ -739,9 +749,7 @@
         }
 
         YtNavigateFinished(event) {
-            if (this.IsComponentReady()) {
-                this.UpdateControl();
-            }
+            this.UpdateControl();
         }
 
         LoadConfig(data) {
@@ -825,7 +833,8 @@
         }
 
         GetInversedTrimInterval() {
-            return this.trimInterval && this.trimInterval.map(x => this.InverseLinearFit(x));
+            return this.trimInterval && this.trimInterval.map(x => this.InverseLinearFit(x))
+                   || this.DEFAULT_VALUE;
         }
 
         LoadUI() {
@@ -839,7 +848,7 @@
                 && !this.controls
                 && (injectionTarget = document.getElementsByClassName("ytscript-panel-main")[0]))
             {
-                let interval = this.GetInversedTrimInterval() || this.DEFAULT_VALUE;
+                let interval = this.GetInversedTrimInterval();
 
                 this.controls = document.createElement("div");
                 this.controls.className = "ytscript-controls-trim";
@@ -920,12 +929,10 @@
         }
 
         YtNavigateStarted(event) {
-            if(this.IsComponentReady()) {
-                if (event.detail.pageType === "watch") {
-                    this.location.videoId = event.detail.endpoint.watchEndpoint.videoId;
-                    this.UpdateControl(this.location.videoId);
-                    this.isProcessed = true;
-                }
+            if (event.detail.pageType === "watch") {
+                this.location.videoId = event.detail.endpoint.watchEndpoint.videoId;
+                this.UpdateControl(this.location.videoId);
+                this.isProcessed = true;
             }
         }
 
@@ -939,26 +946,35 @@
         UpdatePlayer() {
             this.WatchVideoProgress();
 
-            this.videoElement.onloadeddata = () => {
+            const OnLoadedData = () => {
                 this.player.seekTo(this.trimInterval[0]);
-                this.videoElement.onloadeddata = null;
+
+                this.dispatchEvent(new CustomEvent(
+                    this.events.onListenerRemove.eventName, {
+                        detail: {
+                            eventTarget: this.videoElement,
+                            eventName: "loadeddata",
+                            eventListener: OnLoadedData,
+                            useCapture: false
+                        }
+                    }
+                ));
             };
+            this.videoElement.addEventListener("loadeddata", OnLoadedData);
         }
 
         UpdateUI() {
-            let interval = this.GetInversedTrimInterval() || this.DEFAULT_VALUE;
+            let interval = this.GetInversedTrimInterval();
             $(this.slider.api).slider("values", interval)
             this.SetHandles(interval);
         }
 
         YtNavigateFinished(event) {
-            if (this.IsComponentReady()) {
-                this.UpdateUI();
-                if (!this.isProcessed) {
-                    this.UpdateControl();
-                }
-                this.isProcessed = false;
+            this.UpdateUI();
+            if (!this.isProcessed) {
+                this.UpdateControl();
             }
+            this.isProcessed = false;
         }
 
         LoadConfig(data) {
