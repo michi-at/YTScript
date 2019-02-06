@@ -94,7 +94,6 @@
 
 
 
-    /* #region Utils */
     class Slider {
         constructor(target, options) {
             this.sliderClassName = options.className;
@@ -204,11 +203,9 @@
                              : minutes + ":" + seconds + "." + milliseconds;
         }
     }
-    /* #endregion Utils*/
 
 
 
-    /* #region Components */
     class Component extends EventTarget {
         constructor() {
             super();
@@ -965,7 +962,6 @@
             this.UpdateUI();
         }
     }
-    /* #endregion Components */
 
 
 
