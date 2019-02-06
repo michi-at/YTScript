@@ -2,7 +2,7 @@
 // @name         YTScript_test
 // @description  YouTube player enhancement
 // @author       michi-at
-// @version      0.2.110
+// @version      0.2.111
 // @updateURL    https://raw.githubusercontent.com/michi-at/YTScript/test/YTScript_test.meta.js
 // @downloadURL  https://raw.githubusercontent.com/michi-at/YTScript/test/YTScript_test.user.js
 // @match        *://www.youtube.com/*
@@ -245,13 +245,13 @@
                 onYtNavigateStart: {
                     eventTarget: window,
                     eventName: "yt-navigate-start",
-                    eventListener: this.DoJobIfReady(this.YtNavigateStarted),
+                    eventListener: this.DoJobIfComponentReady(this.YtNavigateStarted).bind(this),
                     useCapture: false
                 },
                 onYtNavigateFinish: {
                     eventTarget: window,
                     eventName: "yt-navigate-finish",
-                    eventListener: this.DoJobIfReady(this.YtNavigateFinished),
+                    eventListener: this.DoJobIfComponentReady(this.YtNavigateFinished).bind(this),
                     useCapture: false
                 }
             };
@@ -295,10 +295,10 @@
             return this.status.isLoaded;
         }
 
-        DoJobIfReady(callback) {
-            return (event) => {
+        DoJobIfComponentReady(callback) {
+            return function () {
                 if (this.IsComponentReady()) {
-                    callback.call(this, event);
+                    callback.apply(this, arguments);
                 }
             }
         }
@@ -334,6 +334,10 @@
                 playlistId: playlistId
             };
         }
+        
+        GetPageType(location) {
+            return location.pathname.indexOf("watch") !== -1 ? "watch" : "browse";
+        }
 
         IsNotValidLocation() {
             this.UpdateLocation();
@@ -344,11 +348,7 @@
                 return true;
             }
         }
-
-        GetPageType(location) {
-            return location.pathname.indexOf("watch") !== -1 ? "watch" : "browse";
-        }
-
+        
         LoadConfig(data) {
             this.config = data;
         }
