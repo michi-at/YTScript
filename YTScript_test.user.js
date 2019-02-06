@@ -2,7 +2,7 @@
 // @name         YTScript_test
 // @description  YouTube player enhancement
 // @author       michi-at
-// @version      0.2.111
+// @version      0.2.112
 // @updateURL    https://raw.githubusercontent.com/michi-at/YTScript/test/YTScript_test.meta.js
 // @downloadURL  https://raw.githubusercontent.com/michi-at/YTScript/test/YTScript_test.user.js
 // @match        *://www.youtube.com/*
@@ -610,6 +610,7 @@
             super();
 
             this.DEFAULT_VALUE = 1;
+            this.isProcessed = false;
         }
 
         Load() {
@@ -629,6 +630,8 @@
 
                 gainNode.connect(audioContext.destination);
                 source.connect(gainNode);
+
+                this.isProcessed = true;
             }
 
             if (this.gain) {
@@ -715,13 +718,32 @@
             if (event.detail.pageType === "watch") {
                 this.location.videoId = event.detail.endpoint.watchEndpoint.videoId;
                 this.Update(this.location.videoId);
+                this.isProcessed = true;
             }
         }
 
         Update(videoId) {
-            videoId && this.UpdateVolumeByVideoId(videoId)
-                    || this.UpdateVolume();
-            this.UpdateUI();
+            this.UpdatePlayer(videoId);
+        }
+
+        UpdatePlayer(videoId) {
+            const Callback = () => {
+                videoId && this.UpdateVolumeByVideoId(videoId)
+                        || this.UpdateVolume();
+                this.UpdateUI();
+
+                this.dispatchEvent(new CustomEvent(
+                    this.events.onListenerRemove.eventName, {
+                        detail: {
+                            eventTarget: this.videoElement,
+                            eventName: "loadeddata",
+                            eventListener: Callback,
+                            useCapture: false
+                        }
+                    }
+                ));
+            };
+            this.videoElement.addEventListener("loadeddata", Callback);
         }
 
         UpdateUI() {
@@ -729,7 +751,11 @@
         }
 
         YtNavigateFinished(event) {
-            this.Update();
+            this.UpdateUI();
+            if (!this.isProcessed) {
+                this.Update();
+            }
+            this.isProcessed = false;
         }
 
         LoadConfig(data) {
@@ -739,7 +765,8 @@
 
         ClearConfig() {
             this.SaveConfig({ list: {} });
-            this.Update();
+            this.UpdateVolume();
+            this.UpdateUI();
         }
     }
 
