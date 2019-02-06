@@ -947,7 +947,7 @@
         UpdatePlayer() {
             this.WatchVideoProgress();
 
-            const OnLoadedData = () => {
+            const Callback = () => {
                 this.player.seekTo(this.trimInterval[0]);
 
                 this.dispatchEvent(new CustomEvent(
@@ -955,13 +955,13 @@
                         detail: {
                             eventTarget: this.videoElement,
                             eventName: "loadeddata",
-                            eventListener: OnLoadedData,
+                            eventListener: Callback,
                             useCapture: false
                         }
                     }
                 ));
             };
-            this.videoElement.addEventListener("loadeddata", OnLoadedData);
+            this.videoElement.addEventListener("loadeddata", Callback);
         }
 
         UpdateUI() {
