@@ -2,7 +2,7 @@
 // @name         YTScript_test
 // @description  YouTube player enhancement
 // @author       michi-at
-// @version      0.2.112
+// @version      0.3.000
 // @updateURL    https://raw.githubusercontent.com/michi-at/YTScript/test/YTScript_test.meta.js
 // @downloadURL  https://raw.githubusercontent.com/michi-at/YTScript/test/YTScript_test.user.js
 // @match        *://www.youtube.com/*
@@ -222,7 +222,7 @@
                 onLoad: {
                     eventTarget: document.documentElement,
                     eventName: "load",
-                    eventListener: this.Load.bind(this),
+                    eventListener: this.RunCallbackIfAllowed(this.Load, this.IsValidLocation).bind(this),
                     useCapture: true
                 },
                 onListenerRemove: {
@@ -234,13 +234,13 @@
                 onYtNavigateStart: {
                     eventTarget: window,
                     eventName: "yt-navigate-start",
-                    eventListener: this.DoJobIfComponentReady(this.YtNavigateStarted).bind(this),
+                    eventListener: this.RunCallbackIfAllowed(this.YtNavigateStarted, this.IsComponentReady).bind(this),
                     useCapture: false
                 },
                 onYtNavigateFinish: {
                     eventTarget: window,
                     eventName: "yt-navigate-finish",
-                    eventListener: this.DoJobIfComponentReady(this.YtNavigateFinished).bind(this),
+                    eventListener: this.RunCallbackIfAllowed(this.YtNavigateFinished, this.IsComponentReady).bind(this),
                     useCapture: false
                 }
             };
@@ -284,9 +284,9 @@
             return this.status.isLoaded;
         }
 
-        DoJobIfComponentReady(callback) {
-            return function () {
-                if (this.IsComponentReady()) {
+        RunCallbackIfAllowed(callback, getPermission) {
+            return function() {
+                if (getPermission.call(this)) {
                     callback.apply(this, arguments);
                 }
             }
@@ -328,13 +328,13 @@
             return location.pathname.indexOf("watch") !== -1 ? "watch" : "browse";
         }
 
-        IsNotValidLocation() {
+        IsValidLocation() {
             this.UpdateLocation();
             if (this.location.pageType === "watch") {
-                return false;
+                return true;
             }
             else {
-                return true;
+                return false;
             }
         }
         
@@ -361,7 +361,7 @@
             this.events.onUILoad = {
                 eventTarget: document.documentElement,
                 eventName: "load",
-                eventListener: this.LoadUI.bind(this),
+                eventListener: this.RunCallbackIfAllowed(this.LoadUI, this.IsValidLocation).bind(this),
                 useCapture: true
             };
             this.status._isUILoaded = false;
@@ -587,10 +587,6 @@
         }
 
         LoadUI() {
-            if (this.IsNotValidLocation()) {
-                return;
-            }
-            
             let injectionTarget;
             if (!this.root.api
                 && (injectionTarget = document.querySelector("ytd-watch-flexy #player")))
@@ -614,10 +610,6 @@
         }
 
         Load() {
-            if (this.IsNotValidLocation()) {
-                return;
-            }
-
             if (!this.gain
                 && (this.videoElement = document.getElementsByClassName("html5-main-video")[0]))
             {
@@ -651,10 +643,6 @@
         }
 
         LoadUI() {
-            if (this.IsNotValidLocation()) {
-                return;
-            }
-
             let injectionTarget;
             if (this.gain
                 && !this.slider
@@ -779,10 +767,6 @@
         }
 
         Load() {
-            if (this.IsNotValidLocation()) {
-                return;
-            }
-
             if (!this.player
                 && (this.player = document.getElementById("movie_player")))
             {
@@ -842,10 +826,6 @@
         }
 
         LoadUI() {
-            if (this.IsNotValidLocation()) {
-                return;
-            }
-
             let injectionTarget;
             if (this.videoElement
                 && this.LinearFit
@@ -990,10 +970,45 @@
         }
     }
 
+    class ScrollToCurrentVideoFix extends Component {
+        constructor() {
+            super();
+        }
+
+        IsValidLocation() {
+            this.UpdateLocation();
+            if (this.location.pageType === "watch" && this.location.url.indexOf("list=") !== -1) {
+                return true;
+            }
+            else {
+                return false;
+            }
+        }
+
+        Load() {
+            let manager;
+            if (!this.playlistComponent
+                && (manager = document.querySelector("yt-playlist-manager"))) {
+                this.playlistComponent = manager.playlistComponent;
+
+                this.playlistComponent.__proto__["scrollToCurrentVideo_"] = function () {
+                    let items = this.$ && this.$.items;
+                    let currentIndex = this.data && this.data.localCurrentIndex;
+                    items && this.data && items.scrollToIndex(currentIndex);
+                }
+            }
+
+            if (this.playlistComponent) {
+                this.status.isLoaded = true;
+            }
+        }
+    }
+
 
 
     manager.AddComponent(new ComponentPanel())
            .AddComponent(new TrimControl())
            .AddComponent(new VolumeControl())
+           .AddComponent(new ScrollToCurrentVideoFix())
            .Initialize();
 })();
