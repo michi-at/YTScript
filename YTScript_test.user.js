@@ -18,10 +18,6 @@
 (function () {
     "use strict";
 
-    const DEBUG = false;
-
-
-
     let link = document.createElement("link");
     link.rel = "stylesheet";
     link.type = "text/css";
@@ -31,10 +27,6 @@
     document.head.appendChild(link);
 
 
-
-    function Log(text) {
-        console.info(`${GM_info.script.name}: ${text}`);
-    }
 
     class ComponentManager {
         constructor() {
@@ -102,7 +94,7 @@
 
 
 
-    /* Utils */
+    /* #region Utils */
     class Slider {
         constructor(target, options) {
             this.sliderClassName = options.className;
@@ -212,11 +204,11 @@
                              : minutes + ":" + seconds + "." + milliseconds;
         }
     }
-    /* End of Utils */
+    /* #endregion Utils*/
 
 
 
-    /* Components */
+    /* #region Components */
     class Component extends EventTarget {
         constructor() {
             super();
@@ -612,9 +604,6 @@
 
             if (this.root.api) {
                 this.status.isUILoaded = true;
-                if (DEBUG) {
-                    Log(`${this.name}'s UI has been loaded.`);
-                }
             }
         }
     }
@@ -647,9 +636,6 @@
 
             if (this.gain) {
                 this.status.isLoaded = true;
-                if (DEBUG) {
-                    Log(`${this.name} has been loaded.`);
-                }
             }
         }
 
@@ -716,9 +702,6 @@
 
             if (this.slider && this.controls) {
                 this.status.isUILoaded = true;
-                if (DEBUG) {
-                    Log(`${this.name}'s UI has been loaded.`);
-                }
             }
         }
 
@@ -734,11 +717,11 @@
         YtNavigateStarted(event) {
             if (event.detail.pageType === "watch") {
                 this.location.videoId = event.detail.endpoint.watchEndpoint.videoId;
-                this.UpdateControl(this.location.videoId);
+                this.Update(this.location.videoId);
             }
         }
 
-        UpdateControl(videoId) {
+        Update(videoId) {
             videoId && this.UpdateVolumeByVideoId(videoId)
                     || this.UpdateVolume();
             this.UpdateUI();
@@ -749,7 +732,7 @@
         }
 
         YtNavigateFinished(event) {
-            this.UpdateControl();
+            this.Update();
         }
 
         LoadConfig(data) {
@@ -759,7 +742,7 @@
 
         ClearConfig() {
             this.SaveConfig({ list: {} });
-            this.UpdateControl();
+            this.Update();
         }
     }
 
@@ -799,9 +782,6 @@
                 });
 
                 this.status.isLoaded = true;
-                if (DEBUG) {
-                    Log(`${this.name} has been loaded.`);
-                }
             }
         }
 
@@ -901,9 +881,6 @@
 
             if (this.controls) {
                 this.status.isUILoaded = true;
-                if (DEBUG) {
-                    Log(`${this.name}'s UI has been loaded.`);
-                }
             }
         }
 
@@ -931,12 +908,12 @@
         YtNavigateStarted(event) {
             if (event.detail.pageType === "watch") {
                 this.location.videoId = event.detail.endpoint.watchEndpoint.videoId;
-                this.UpdateControl(this.location.videoId);
+                this.Update(this.location.videoId);
                 this.isProcessed = true;
             }
         }
 
-        UpdateControl(videoId) {
+        Update(videoId) {
             videoId && this.UpdateTrimIntervalByVideoId(videoId)
                     || !videoId && this.UpdateTrimInterval();
             this.trimInterval && this.UpdatePlayer();
@@ -972,7 +949,7 @@
         YtNavigateFinished(event) {
             this.UpdateUI();
             if (!this.isProcessed) {
-                this.UpdateControl();
+                this.Update();
             }
             this.isProcessed = false;
         }
@@ -988,7 +965,7 @@
             this.UpdateUI();
         }
     }
-    /* End of Components */
+    /* #endregion Components */
 
 
 
