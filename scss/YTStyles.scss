@@ -1,16 +1,55 @@
-$accent: #db3861;
-$gray: #9a9898;
+$mainColor: #e20000;
+$backgroundColor: #ffffff;
+$darkBackgroundColor: #121212;
+$borderColor: #dcdcdc;
+$componentContentColor: #f5f5f5;
+$darkComponentContentColor: #f5f5f5;
+$inactiveButtonColor: #909090;
+$activeButtonColor: $mainColor;
+$darkActiveButtonColor: #3EA6FF;
+$titleBackground: #424242;
+$gray: #8f8f8f;
 $dark: #464646;
-$borderWhite: #dcdcdc 1px solid;
+$border: 1px solid;
 
-$buttonBorderRadiusSize: 7px;
+$buttonBorderRadiusSize: 2px;
 $panelItemGap: 5px;
-/* Fonts */
-@import url('https://fonts.googleapis.com/css?family=Montserrat:300,500,700');
-/* Libs */
-@import url("https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css");
 
-/* Styles */
+@import url('https://fonts.googleapis.com/css?family=Montserrat:300,500,700');
+@import url("https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css");
+  
+html {
+    --ytscript-main: var(--yt-spec-brand-subscribe-button-background, #{$mainColor});
+    --ytscript-background: var(--yt-main-app-background, #{$backgroundColor});
+    --ytscript-show-content: var(--ytscript-main);
+    --ytscript-component-title: var(--ytscript-main);
+    --ytscript-component-title-background: #{$titleBackground};
+    --ytscript-component-content: var(--yt-playlist-background-item, #{$componentContentColor});
+    --ytscript-component-button-inactive: var(--yt-spec-icon-inactive, #{$inactiveButtonColor});
+    --ytscript-component-button-active: #{$activeButtonColor};
+    --ytscript-slider: var(--ytscript-main);
+    --ytscript-slider-handle: #{$dark};
+    --ytscript-input: var(--yt-searchbox-text-color, #{$darkBackgroundColor});
+    --ytscript-component-slider: var(--ytscript-main);
+    --ytscript-border: var(--yt-spec-10-percent-layer, #{$borderColor});
+}
+
+html[dark] {
+    --ytscript-main: var(--yt-spec-brand-subscribe-button-background, #{$mainColor});
+    --ytscript-background: var(--yt-main-app-background, #{$darkBackgroundColor});
+    --ytscript-show-content: #{$gray};
+    --ytscript-component-title: var(--ytscript-main);
+    --ytscript-component-title-background: var(--yt-playlist-background-header, #{$titleBackground});
+    --ytscript-component-content: var(--yt-playlist-background-item, #{$darkComponentContentColor});
+    --ytscript-component-button-inactive: var(--yt-spec-icon-inactive, #{$inactiveButtonColor});
+    --ytscript-component-button-active: var(--yt-spec-icon-active-button-link, #{$darkActiveButtonColor});
+    --ytscript-slider: var(--ytscript-main);
+    --ytscript-slider-handle: #ffffff;
+    --ytscript-input: var(--yt-searchbox-text-color, #{$backgroundColor});
+    --ytscript-component-slider: var(--ytscript-component-button-active);
+    --ytscript-border: var(--yt-spec-10-percent-layer, #{$borderColor});
+}
+
 .ytscript {
 
     &-button {
@@ -19,7 +58,7 @@ $panelItemGap: 5px;
         border: none;
         color: #fff;
         text-decoration: none;
-        background-color: $gray;
+        background-color: var(--ytscript-component-button-active);
         padding: 5px 11px;
         font-size: 14px;
         text-transform: uppercase;
@@ -47,32 +86,11 @@ $panelItemGap: 5px;
         height: 3px;
         bottom: 0;
         width: 100%;
-        background-color: darken($gray, 15%);
+        background-color: hsla(0, 0, 0, 0.4);
         opacity: .18;
         border-bottom-left-radius: 2px;
         border-bottom-right-radius: 2px;
         left: 0
-    }
-
-    &-button:hover {
-        background-color: lighten($gray, 15%);
-    }
-
-    &-button:hover::after {
-        opacity: 0.22
-    }
-
-    &-button-white {
-        color: #000;
-        background-color: #fff
-    }
-
-    &-button-white:hover {
-        background-color: #d9d9d9
-    }
-
-    &-button-white::after {
-        background-color: #565656
     }
 
     &-slider {
@@ -92,7 +110,7 @@ $panelItemGap: 5px;
                 height: 4px;
                 width: 125px;
                 position: absolute;
-                background: $accent;
+                background: var(--ytscript-slider);
                 border: none;
                 border-radius: 10px;
                 outline: none;
@@ -143,11 +161,11 @@ $panelItemGap: 5px;
             .ui-slider-range {
                 height: 100%;
                 position: absolute;
-                background-color: $accent;
+                background-color: var(--ytscript-component-slider);
             }
 
             .ui-slider-handle {
-                background-color: $dark;
+                background-color: var(--ytscript-slider-handle);
             }
 
             &-container {
@@ -164,8 +182,8 @@ $panelItemGap: 5px;
         overflow: hidden;
 
         .ytscript-container {
-            background-color: #fff;
-            color: #fff;
+            background-color: var(--ytscript-background);
+            color: var(--ytscript-input);
             height: 0;
             overflow-y: scroll;
             overflow-x: hidden;
@@ -178,8 +196,8 @@ $panelItemGap: 5px;
                 margin: 0;
                 padding: 0;
                 color: #4b4b4b;
-                border-top: $borderWhite;
-                border-bottom: $borderWhite;
+                border-top: $border var(--ytscript-border);
+                border-bottom: $border var(--ytscript-border);
             }
 
             &-menu:first-child {
@@ -200,8 +218,7 @@ $panelItemGap: 5px;
                 position: relative;
                 color: #fff;
                 text-transform: uppercase;
-                background-color: $dark;
-                backface-visibility: hidden;
+                background-color: var(--ytscript-component-title-background);
                 cursor: default;
                 user-select: none;
 
@@ -218,7 +235,7 @@ $panelItemGap: 5px;
                 }
 
                 span.first {
-                    color: $accent;
+                    color: var(--ytscript-component-title);
                 }
 
                 .hide {
@@ -227,8 +244,8 @@ $panelItemGap: 5px;
                     padding: 3px 3px;
                     float: right;
                     outline: none;
-                    color: $accent;
-                    transition: transform 0.2s ease;
+                    color: var(--ytscript-component-button-inactive);
+                    transition: transform 0.2s ease, color 0.2s ease;
 
                     .fa {
                         margin: 0;
@@ -237,13 +254,14 @@ $panelItemGap: 5px;
 
                     &.open {
                         transform: rotateZ(-450deg);
+                        color: var(--ytscript-component-button-active);
                     }
                 }
             }
 
             &-content {
                 display: block;
-                background-color: #f5f5f5;
+                background-color: var(--ytscript-component-content);
                 font-family: "Roboto", Arial, sans-serif;
                 font-size: 15px;
                 overflow: hidden;
@@ -256,21 +274,18 @@ $panelItemGap: 5px;
             width: 100%;
             padding: 0;
             margin: 0;
-            background-color: $accent;
+            background-color: var(--ytscript-show-content);
             border: none;
             border-bottom-left-radius: $buttonBorderRadiusSize;
             border-bottom-right-radius: $buttonBorderRadiusSize;
             transition: background-color 0.25s ease;
             outline: none;
+            cursor: pointer;
 
             .fa {
                 font-size: 24px;
                 color: #fff;
                 transition: transform 0.4s ease-in-out;
-            }
-
-            &:hover {
-                background-color: saturate($color: $accent, $amount: 20%);
             }
 
             &.open {
@@ -306,7 +321,9 @@ $panelItemGap: 5px;
                     font-family: "Montserrat", Arial, sans-serif;
                     font-size: 15px;
                     position: relative;
-                    border: $borderWhite;
+                    color: var(--ytscript-input);
+                    background-color: var(--ytscript-background);
+                    border: $border var(--ytscript-border);
 
                     &:first-child {
                         left: -10px;

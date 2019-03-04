@@ -2,7 +2,7 @@
 // @name         YTScript
 // @description  YouTube player enhancement
 // @author       michi-at
-// @version      0.3.000
+// @version      0.3.012
 // @updateURL    https://raw.githubusercontent.com/michi-at/YTScript/master/YTScript.meta.js
 // @downloadURL  https://raw.githubusercontent.com/michi-at/YTScript/master/YTScript.user.js
 // @match        *://www.youtube.com/*
@@ -10,6 +10,7 @@
 // @grant        GM_getValue
 // @grant        GM_setValue
 // @grant        GM_deleteValue
+// @grant        GM_listValues
 // @run-at       document-start
 // @require      https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js
 // @require      https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js
@@ -313,8 +314,8 @@
         UpdateLocation() {
             let videoId, playlistId, location = window.location;
 
-            [, videoId] = /(?:\?|&)v=([a-zA-Z0-9\-\_]+)/g.exec(location.search) || [, ""];
-            [, playlistId] = /(?:\?|&)list=([a-zA-Z0-9\-\_]+)/g.exec(location.search) || [, ""];
+            videoId = this.ParseValueFromUrl(location.search, "v");
+            playlistId = this.ParseValueFromUrl(location.search, "list");
 
             this.location = {
                 pageType: this.GetPageType(location),
@@ -322,6 +323,15 @@
                 videoId: videoId,
                 playlistId: playlistId
             };
+        }
+
+        ParseValueFromUrl(url, key) {
+            let expression = `(?:\\?|&)${key}=([a-zA-Z0-9\\-\\_]+)`;
+            let regExp = new RegExp(expression, "g");
+
+            let value;
+            [, value] = regExp.exec(url) || [, ""];
+            return value;
         }
         
         GetPageType(location) {
@@ -550,8 +560,8 @@
                 event.stopPropagation();
             }
 
-            componentTitle.addEventListener("click", HideContent.bind(this));
-            hideContentButton.addEventListener("click", HideContent.bind(this));
+            componentTitle.addEventListener("click", HideContent);
+            hideContentButton.addEventListener("click", HideContent);
 
             componentMenu.appendChild(componentTitle);
             componentMenu.appendChild(componentContent);
@@ -694,7 +704,13 @@
         }
 
         VolumeConfirmed(event, ui) {
-            this.config.list[this.location.videoId] = { volume: ui.value };
+            if (ui.value === this.DEFAULT_VALUE) {
+                delete this.config.list[this.location.videoId];
+            }
+            else {
+                this.config.list[this.location.videoId] = { volume: ui.value };
+            }
+            
             this.SaveConfig(this.config);
         }
 
@@ -704,7 +720,7 @@
 
         YtNavigateStarted(event) {
             if (event.detail.pageType === "watch") {
-                this.location.videoId = event.detail.endpoint.watchEndpoint.videoId;
+                this.location.videoId = this.ParseValueFromUrl(event.detail.url, "v");
                 this.Update(this.location.videoId);
                 this.isProcessed = true;
             }
@@ -764,6 +780,7 @@
 
             this.DEFAULT_VALUE = [0, 100];
             this.isProcessed = false;
+            this.epsilon = 0.0001;
         }
 
         Load() {
@@ -780,34 +797,45 @@
             !this.videoElement && (this.videoElement = document.getElementsByClassName("html5-main-video")[0]);
 
             if (this.player && this.videoElement) {
-                this.WatchVideoProgress();
-                
                 this.videoElement.addEventListener("durationchange", () => {
                     this.LinearFit = Utils.LinearInterpolation(this.DEFAULT_VALUE[0], 0,
                                                                this.DEFAULT_VALUE[1], this.videoElement.getDuration());
                     this.InverseLinearFit = Utils.LinearInterpolation(0, this.DEFAULT_VALUE[0],
                                                                this.videoElement.getDuration(), this.DEFAULT_VALUE[1]);
+                    
+                    this.WatchVideoProgress();
                 });
+                
+                this.WatchVideoProgress();
 
                 this.status.isLoaded = true;
             }
         }
 
         WatchVideoProgress() {
-            this.animationFrameId = requestAnimationFrame(this.OnVideoProgress.bind(this));
+            !this.animationFrameId && (this.animationFrameId = requestAnimationFrame(this.OnVideoProgress.bind(this)));
         }
 
         OnVideoProgress() {
             if (this.trimInterval
                 && this.InverseLinearFit
-                && this.InverseLinearFit(this.trimInterval[1]) !== this.DEFAULT_VALUE[1])
+                && this.EuclidianDistance(this.InverseLinearFit(this.trimInterval[1]), this.DEFAULT_VALUE[1])
+                   >= this.epsilon)
             {
                 if (this.videoElement.getCurrentTime() >= this.trimInterval[1]) {
                     this.videoElement.loop ? this.player.seekTo(this.trimInterval[0])
                                         : this.player.nextVideo();
                 }
-                this.WatchVideoProgress();
+                else {
+                    this.animationFrameId = undefined;
+                    this.WatchVideoProgress();
+                }
             }
+            this.animationFrameId = undefined;
+        }
+
+        EuclidianDistance(x1, x2) {
+            return Math.sqrt( (x1 - x2) * (x1 - x2) );
         }
 
         UpdateTrimInterval() {
@@ -911,7 +939,7 @@
 
         YtNavigateStarted(event) {
             if (event.detail.pageType === "watch") {
-                this.location.videoId = event.detail.endpoint.watchEndpoint.videoId;
+                this.location.videoId = this.ParseValueFromUrl(event.detail.url, "v");
                 this.Update(this.location.videoId);
                 this.isProcessed = true;
             }
@@ -925,23 +953,22 @@
         }
 
         UpdatePlayer() {
-            this.WatchVideoProgress();
-
             const Callback = () => {
-                this.player.seekTo(this.trimInterval[0]);
-
+                this.trimInterval && this.player.seekTo(this.trimInterval[0]);
+                
                 this.dispatchEvent(new CustomEvent(
                     this.events.onListenerRemove.eventName, {
                         detail: {
                             eventTarget: this.videoElement,
-                            eventName: "loadeddata",
+                            eventName: "loadedmetadata",
                             eventListener: Callback,
                             useCapture: false
                         }
                     }
                 ));
             };
-            this.videoElement.addEventListener("loadeddata", Callback);
+            this.videoElement.addEventListener("loadedmetadata", Callback);
+            this.WatchVideoProgress();
         }
 
         UpdateUI() {
@@ -991,11 +1018,13 @@
                 && (manager = document.querySelector("yt-playlist-manager"))) {
                 this.playlistComponent = manager.playlistComponent;
 
-                this.playlistComponent.__proto__["scrollToCurrentVideo_"] = function () {
+                let proto = this.playlistComponent && Object.getPrototypeOf(this.playlistComponent);
+
+                proto && (proto.scrollToCurrentVideo_ = function () {
                     let items = this.$ && this.$.items;
                     let currentIndex = this.data && this.data.localCurrentIndex;
                     items && this.data && items.scrollToIndex(currentIndex);
-                }
+                });
             }
 
             if (this.playlistComponent) {

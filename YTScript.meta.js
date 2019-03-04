@@ -2,7 +2,7 @@
 // @name         YTScript
 // @description  YouTube player enhancement
 // @author       michi-at
-// @version      0.3.000
+// @version      0.3.012
 // @updateURL    https://raw.githubusercontent.com/michi-at/YTScript/master/YTScript.meta.js
 // @downloadURL  https://raw.githubusercontent.com/michi-at/YTScript/master/YTScript.user.js
 // @match        *://www.youtube.com/*
