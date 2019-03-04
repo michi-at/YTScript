@@ -2,7 +2,7 @@
 // @name         YTScript_test
 // @description  YouTube player enhancement
 // @author       michi-at
-// @version      0.3.010
+// @version      0.3.012
 // @updateURL    https://raw.githubusercontent.com/michi-at/YTScript/test/YTScript_test.meta.js
 // @downloadURL  https://raw.githubusercontent.com/michi-at/YTScript/test/YTScript_test.user.js
 // @match        *://www.youtube.com/*
@@ -954,7 +954,7 @@
 
         UpdatePlayer() {
             const Callback = () => {
-                this.player.seekTo(this.trimInterval[0]);
+                this.trimInterval && this.player.seekTo(this.trimInterval[0]);
                 
                 this.dispatchEvent(new CustomEvent(
                     this.events.onListenerRemove.eventName, {
@@ -1018,13 +1018,13 @@
                 && (manager = document.querySelector("yt-playlist-manager"))) {
                 this.playlistComponent = manager.playlistComponent;
 
-                let proto = Object.getPrototypeOf(this.playlistComponent);
+                let proto = this.playlistComponent && Object.getPrototypeOf(this.playlistComponent);
 
-                proto.scrollToCurrentVideo_ = function () {
+                proto && (proto.scrollToCurrentVideo_ = function () {
                     let items = this.$ && this.$.items;
                     let currentIndex = this.data && this.data.localCurrentIndex;
                     items && this.data && items.scrollToIndex(currentIndex);
-                }
+                });
             }
 
             if (this.playlistComponent) {
