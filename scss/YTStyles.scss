@@ -19,7 +19,7 @@ $panelItemGap: 5px;
 @import url("https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css");
   
 html {
-    --ytscript-main: var(--yt-spec-brand-button-background, #{$mainColor});
+    --ytscript-main: var(--yt-spec-brand-subscribe-button-background, #{$mainColor});
     --ytscript-background: var(--yt-main-app-background, #{$backgroundColor});
     --ytscript-show-content: var(--ytscript-main);
     --ytscript-component-title: var(--ytscript-main);
@@ -35,7 +35,7 @@ html {
 }
 
 html[dark] {
-    --ytscript-main: var(--yt-spec-brand-button-background, #{$mainColor});
+    --ytscript-main: var(--yt-spec-brand-subscribe-button-background, #{$mainColor});
     --ytscript-background: var(--yt-main-app-background, #{$darkBackgroundColor});
     --ytscript-show-content: #{$gray};
     --ytscript-component-title: var(--ytscript-main);
@@ -219,7 +219,6 @@ html[dark] {
                 color: #fff;
                 text-transform: uppercase;
                 background-color: var(--ytscript-component-title-background);
-                backface-visibility: hidden;
                 cursor: default;
                 user-select: none;
 

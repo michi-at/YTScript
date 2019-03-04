@@ -1,7 +1,7 @@
 @import url("https://fonts.googleapis.com/css?family=Montserrat:300,500,700");
 @import url("https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css");
 html {
-  --ytscript-main: var(--yt-spec-brand-button-background, #e20000);
+  --ytscript-main: var(--yt-spec-brand-subscribe-button-background, #e20000);
   --ytscript-background: var(--yt-main-app-background, #ffffff);
   --ytscript-show-content: var(--ytscript-main);
   --ytscript-component-title: var(--ytscript-main);
@@ -17,7 +17,7 @@ html {
 }
 
 html[dark] {
-  --ytscript-main: var(--yt-spec-brand-button-background, #e20000);
+  --ytscript-main: var(--yt-spec-brand-subscribe-button-background, #e20000);
   --ytscript-background: var(--yt-main-app-background, #121212);
   --ytscript-show-content: #8f8f8f;
   --ytscript-component-title: var(--ytscript-main);
@@ -194,8 +194,6 @@ html[dark] {
   color: #fff;
   text-transform: uppercase;
   background-color: var(--ytscript-component-title-background);
-  -webkit-backface-visibility: hidden;
-          backface-visibility: hidden;
   cursor: default;
   -webkit-user-select: none;
      -moz-user-select: none;
