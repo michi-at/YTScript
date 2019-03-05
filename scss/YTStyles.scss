@@ -221,6 +221,7 @@ html[dark] {
                 background-color: var(--ytscript-component-title-background);
                 cursor: default;
                 user-select: none;
+                backface-visibility: hidden;
 
                 .fa {
                     font-size: 18px;
@@ -236,6 +237,7 @@ html[dark] {
 
                 span.first {
                     color: var(--ytscript-component-title);
+                    filter: brightness(150%);
                 }
 
                 .hide {

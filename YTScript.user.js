@@ -2,7 +2,7 @@
 // @name         YTScript
 // @description  YouTube player enhancement
 // @author       michi-at
-// @version      0.3.012
+// @version      0.3.014
 // @updateURL    https://raw.githubusercontent.com/michi-at/YTScript/master/YTScript.meta.js
 // @downloadURL  https://raw.githubusercontent.com/michi-at/YTScript/master/YTScript.user.js
 // @match        *://www.youtube.com/*
@@ -509,7 +509,11 @@
                     return;
                 }
 
-                componentContent.classList.add("processing");
+                const ToggleProcessing = () => {
+                    componentContent.classList.toggle("processing");
+                }
+
+                ToggleProcessing();
                 contentNode.renderedHeight = contentNode.renderedHeight || contentNode.GetRenderedHeight();
                 if (componentContent.classList.contains("open")) {
                     this.container.renderedHeight -= contentNode.renderedHeight;
@@ -529,7 +533,7 @@
                         toValue: this.container.renderedHeight,
                         easingFunction: Utils.Ease,
                         completeFunction: () => { 
-                            componentContent.classList.remove("processing");
+                            ToggleProcessing();
                         }
                     });
                 }
@@ -551,7 +555,7 @@
                         toValue: this.container.renderedHeight,
                         easingFunction: Utils.EaseDown,
                         completeFunction: () => { 
-                            componentContent.classList.remove("processing");
+                            ToggleProcessing();
                         }
                     });
                 }
@@ -798,11 +802,7 @@
 
             if (this.player && this.videoElement) {
                 this.videoElement.addEventListener("durationchange", () => {
-                    this.LinearFit = Utils.LinearInterpolation(this.DEFAULT_VALUE[0], 0,
-                                                               this.DEFAULT_VALUE[1], this.videoElement.getDuration());
-                    this.InverseLinearFit = Utils.LinearInterpolation(0, this.DEFAULT_VALUE[0],
-                                                               this.videoElement.getDuration(), this.DEFAULT_VALUE[1]);
-                    
+                    this.InitLinearFit();
                     this.WatchVideoProgress();
                 });
                 
@@ -810,6 +810,13 @@
 
                 this.status.isLoaded = true;
             }
+        }
+
+        InitLinearFit() {
+            this.LinearFit = Utils.LinearInterpolation(this.DEFAULT_VALUE[0], 0,
+                                                       this.DEFAULT_VALUE[1], this.videoElement.getDuration());
+            this.InverseLinearFit = Utils.LinearInterpolation(0, this.DEFAULT_VALUE[0],
+                                                       this.videoElement.getDuration(), this.DEFAULT_VALUE[1]);
         }
 
         WatchVideoProgress() {
@@ -855,6 +862,7 @@
 
         LoadUI() {
             let injectionTarget;
+            this.videoElement && !this.LinearFit && this.InitLinearFit();
             if (this.videoElement
                 && this.LinearFit
                 && !this.controls

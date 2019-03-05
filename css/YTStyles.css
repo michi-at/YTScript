@@ -199,6 +199,8 @@ html[dark] {
      -moz-user-select: none;
       -ms-user-select: none;
           user-select: none;
+  -webkit-backface-visibility: hidden;
+          backface-visibility: hidden;
 }
 
 .ytscript-panel-main .component-title .fa {
@@ -215,6 +217,8 @@ html[dark] {
 
 .ytscript-panel-main .component-title span.first {
   color: var(--ytscript-component-title);
+  -webkit-filter: brightness(150%);
+          filter: brightness(150%);
 }
 
 .ytscript-panel-main .component-title .hide {
