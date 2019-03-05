@@ -2,7 +2,7 @@
 // @name         YTScript_test
 // @description  YouTube player enhancement
 // @author       michi-at
-// @version      0.3.014
+// @version      0.3.015
 // @updateURL    https://raw.githubusercontent.com/michi-at/YTScript/test/YTScript_test.meta.js
 // @downloadURL  https://raw.githubusercontent.com/michi-at/YTScript/test/YTScript_test.user.js
 // @match        *://www.youtube.com/*
@@ -803,7 +803,6 @@
             if (this.player && this.videoElement) {
                 this.videoElement.addEventListener("durationchange", () => {
                     this.InitLinearFit();
-                    this.WatchVideoProgress();
                 });
                 
                 this.WatchVideoProgress();
@@ -820,7 +819,7 @@
         }
 
         WatchVideoProgress() {
-            !this.animationFrameId && (this.animationFrameId = requestAnimationFrame(this.OnVideoProgress.bind(this)));
+            requestAnimationFrame(this.OnVideoProgress.bind(this));
         }
 
         OnVideoProgress() {
@@ -833,12 +832,8 @@
                     this.videoElement.loop ? this.player.seekTo(this.trimInterval[0])
                                         : this.player.nextVideo();
                 }
-                else {
-                    this.animationFrameId = undefined;
-                    this.WatchVideoProgress();
-                }
             }
-            this.animationFrameId = undefined;
+            this.WatchVideoProgress();
         }
 
         EuclidianDistance(x1, x2) {
@@ -939,7 +934,6 @@
             else {
                 this.config.list[this.location.videoId] = { trim: interval };
                 this.trimInterval = interval;
-                this.WatchVideoProgress();
             }
 
             this.SaveConfig(this.config);
@@ -976,7 +970,6 @@
                 ));
             };
             this.videoElement.addEventListener("loadedmetadata", Callback);
-            this.WatchVideoProgress();
         }
 
         UpdateUI() {
