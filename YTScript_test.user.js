@@ -2,7 +2,7 @@
 // @name         YTScript_test
 // @description  YouTube player enhancement
 // @author       michi-at
-// @version      0.3.013
+// @version      0.3.014
 // @updateURL    https://raw.githubusercontent.com/michi-at/YTScript/test/YTScript_test.meta.js
 // @downloadURL  https://raw.githubusercontent.com/michi-at/YTScript/test/YTScript_test.user.js
 // @match        *://www.youtube.com/*
@@ -509,7 +509,11 @@
                     return;
                 }
 
-                componentContent.classList.add("processing");
+                const ToggleProcessing = () => {
+                    componentContent.classList.toggle("processing");
+                }
+
+                ToggleProcessing();
                 contentNode.renderedHeight = contentNode.renderedHeight || contentNode.GetRenderedHeight();
                 if (componentContent.classList.contains("open")) {
                     this.container.renderedHeight -= contentNode.renderedHeight;
@@ -529,7 +533,7 @@
                         toValue: this.container.renderedHeight,
                         easingFunction: Utils.Ease,
                         completeFunction: () => { 
-                            componentContent.classList.remove("processing");
+                            ToggleProcessing();
                         }
                     });
                 }
@@ -551,7 +555,7 @@
                         toValue: this.container.renderedHeight,
                         easingFunction: Utils.EaseDown,
                         completeFunction: () => { 
-                            componentContent.classList.remove("processing");
+                            ToggleProcessing();
                         }
                     });
                 }
