@@ -2,7 +2,7 @@
 // @name         YTScript_test
 // @description  YouTube player enhancement
 // @author       michi-at
-// @version      0.3.015
+// @version      0.3.016
 // @updateURL    https://raw.githubusercontent.com/michi-at/YTScript/test/YTScript_test.meta.js
 // @downloadURL  https://raw.githubusercontent.com/michi-at/YTScript/test/YTScript_test.user.js
 // @match        *://www.youtube.com/*
@@ -800,10 +800,17 @@
 
             !this.videoElement && (this.videoElement = document.getElementsByClassName("html5-main-video")[0]);
 
-            if (this.player && this.videoElement) {
+            if (!this.navigationManager
+                && (this.navigationManager = document.querySelector("yt-navigation-manager")))
+            {
+                this.navigationManager.oldHandleNavigatePart = this.navigationManager.handleNavigatePart_;
+            }
+
+            if (this.player && this.videoElement && this.navigationManager) {
                 this.videoElement.addEventListener("durationchange", () => {
                     this.InitLinearFit();
                 });
+                this.InitLinearFit();
                 
                 this.WatchVideoProgress();
 
@@ -819,7 +826,7 @@
         }
 
         WatchVideoProgress() {
-            requestAnimationFrame(this.OnVideoProgress.bind(this));
+            requestIdleCallback(this.OnVideoProgress.bind(this), { timeOut: 100 });
         }
 
         OnVideoProgress() {
@@ -945,12 +952,57 @@
                 this.Update(this.location.videoId);
                 this.isProcessed = true;
             }
+            else {
+                const Callback = () => {
+                    this.player.pauseVideo();
+                    this.shouldResume = true;
+                    
+                    this.dispatchEvent(new CustomEvent(
+                        this.events.onListenerRemove.eventName, {
+                            detail: {
+                                eventTarget: this.videoElement,
+                                eventName: "durationchange",
+                                eventListener: Callback,
+                                useCapture: false
+                            }
+                        }
+                    ));
+                };
+                this.videoElement.addEventListener("durationchange", Callback);
+                const Handler = function () {
+                    for (let i = 0; i < arguments.length; ++i) {
+                        if (arguments[i].hasOwnProperty("url")) {
+                            let videoId = this.ParseValueFromUrl(arguments[i].url, "v");
+                            if (videoId !== "") {
+                                this.UpdateTrimIntervalByVideoId(videoId);
+                                this.UpdateUI();
+                                while (this.shouldResume !== true) {}
+                                this.trimInterval && this.player.seekTo(this.trimInterval[0]);
+                                this.player.playVideo();
+                                this.isProcessed = true;
+                                this.SetHandleNavigatePart();
+                                break;
+                            }
+                        }
+                    }
+                };
+                this.SetHandleNavigatePart(Handler);
+            }
+        }
+
+        SetHandleNavigatePart(callback) {
+            let old = this.navigationManager.oldHandleNavigatePart;
+            let control = this;
+            this.navigationManager.handleNavigatePart_ = function () {
+                old.apply(this, arguments);
+                callback && callback.apply(control, arguments);
+            }
         }
 
         Update(videoId) {
             videoId && this.UpdateTrimIntervalByVideoId(videoId)
                     || !videoId && this.UpdateTrimInterval();
-            this.trimInterval && this.UpdatePlayer();
+            this.UpdatePlayer();
             this.UpdateUI();
         }
 
