@@ -2,7 +2,7 @@
 // @name         YTScript_test
 // @description  YouTube player enhancement
 // @author       michi-at
-// @version      0.3.016
+// @version      0.3.018
 // @updateURL    https://raw.githubusercontent.com/michi-at/YTScript/test/YTScript_test.meta.js
 // @downloadURL  https://raw.githubusercontent.com/michi-at/YTScript/test/YTScript_test.user.js
 // @match        *://www.youtube.com/*
@@ -620,7 +620,7 @@
             super();
 
             this.DEFAULT_VALUE = 1;
-            this.isProcessed = false;
+            this.status.isProcessed = false;
         }
 
         Load() {
@@ -637,7 +637,7 @@
                 gainNode.connect(audioContext.destination);
                 source.connect(gainNode);
 
-                this.isProcessed = true;
+                this.status.isProcessed = true;
             }
 
             if (this.gain) {
@@ -726,7 +726,7 @@
             if (event.detail.pageType === "watch") {
                 this.location.videoId = this.ParseValueFromUrl(event.detail.url, "v");
                 this.Update(this.location.videoId);
-                this.isProcessed = true;
+                this.status.isProcessed = true;
             }
         }
 
@@ -760,10 +760,10 @@
 
         YtNavigateFinished(event) {
             this.UpdateUI();
-            if (!this.isProcessed) {
+            if (!this.status.isProcessed) {
                 this.Update();
             }
-            this.isProcessed = false;
+            this.status.isProcessed = false;
         }
 
         LoadConfig(data) {
@@ -783,7 +783,8 @@
             super();
 
             this.DEFAULT_VALUE = [0, 100];
-            this.isProcessed = false;
+            this.status.isProcessed = false;
+            this.status.shouldResume = false;
             this.epsilon = 0.0001;
         }
 
@@ -794,7 +795,7 @@
                 this.UpdateTrimIntervalByVideoId(this.location.videoId);
                 if (this.trimInterval) {
                     this.player.seekTo(this.trimInterval[0]);
-                    this.isProcessed = true;
+                    this.status.isProcessed = true;
                 }
             }
 
@@ -950,12 +951,14 @@
             if (event.detail.pageType === "watch") {
                 this.location.videoId = this.ParseValueFromUrl(event.detail.url, "v");
                 this.Update(this.location.videoId);
-                this.isProcessed = true;
+                this.status.isProcessed = true;
             }
-            else {
+            else if (this.ParseValueFromUrl(event.detail.url, "list") !== ""
+                     && this.ParseValueFromUrl(event.detail.url, "playnext") !== "")
+            {
                 const Callback = () => {
                     this.player.pauseVideo();
-                    this.shouldResume = true;
+                    this.status.shouldResume = true;
                     
                     this.dispatchEvent(new CustomEvent(
                         this.events.onListenerRemove.eventName, {
@@ -976,7 +979,7 @@
                             if (videoId !== "") {
                                 this.UpdateTrimIntervalByVideoId(videoId);
                                 this.UpdateUI();
-                                while (this.shouldResume !== true) {}
+                                while (this.status.shouldResume !== true) {}
                                 this.trimInterval && this.player.seekTo(this.trimInterval[0]);
                                 this.player.playVideo();
                                 this.isProcessed = true;
@@ -1032,10 +1035,10 @@
 
         YtNavigateFinished(event) {
             this.UpdateUI();
-            if (!this.isProcessed) {
+            if (!this.status.isProcessed) {
                 this.Update();
             }
-            this.isProcessed = false;
+            this.status.isProcessed = false;
         }
 
         LoadConfig(data) {
