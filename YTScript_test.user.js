@@ -2,7 +2,7 @@
 // @name         YTScript_test
 // @description  YouTube player enhancement
 // @author       michi-at
-// @version      0.3.100
+// @version      0.3.101
 // @updateURL    https://raw.githubusercontent.com/michi-at/YTScript/test/YTScript_test.meta.js
 // @downloadURL  https://raw.githubusercontent.com/michi-at/YTScript/test/YTScript_test.user.js
 // @match        *://www.youtube.com/*
@@ -920,8 +920,12 @@
         }
 
         SetVolumeAndUpdateUI(videoId) {
-            videoId && this.UpdateVolumeByVideoId(videoId)
-                    || this.UpdateVolume();
+            if (videoId) {
+                this.UpdateVolumeByVideoId(videoId);
+            }
+            else {
+                this.UpdateVolume();
+            }
             this.UpdateUI();
         }
 
@@ -1156,8 +1160,12 @@
         }
 
         Update(videoId, callback) {
-            videoId && this.UpdateTrimIntervalByVideoId(videoId)
-                    || !videoId && this.UpdateTrimInterval();
+            if (videoId) {
+                this.UpdateTrimIntervalByVideoId(videoId);
+            }
+            else {
+                this.UpdateTrimInterval();
+            }
             this.UpdatePlayer(callback);
             this.UpdateUI();
         }
