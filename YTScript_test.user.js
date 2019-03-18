@@ -2,7 +2,7 @@
 // @name         YTScript_test
 // @description  YouTube player enhancement
 // @author       michi-at
-// @version      0.3.101
+// @version      0.3.102
 // @updateURL    https://raw.githubusercontent.com/michi-at/YTScript/test/YTScript_test.meta.js
 // @downloadURL  https://raw.githubusercontent.com/michi-at/YTScript/test/YTScript_test.user.js
 // @match        *://www.youtube.com/*
@@ -942,6 +942,15 @@
 
                 this.status.isProcessed = false;
             }
+            else if (event.detail.pageType === "browse") {
+                if (this.ParseValueFromUrl(event.detail.url, "list") !== ""
+                && this.ParseValueFromUrl(event.detail.url, "playnext") !== "")
+                {
+                    this.Update();
+
+                    this.status.isProcessed = false;
+                }
+            }
         }
 
         LoadConfig(data) {
@@ -1241,6 +1250,15 @@
                 }
 
                 this.status.isProcessed = false;
+            }
+            else if (event.detail.pageType === "browse") {
+                if (this.ParseValueFromUrl(event.detail.url, "list") !== ""
+                && this.ParseValueFromUrl(event.detail.url, "playnext") !== "")
+                {
+                    this.Update();
+
+                    this.status.isProcessed = false;
+                }
             }
         }
 
