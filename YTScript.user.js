@@ -2,7 +2,7 @@
 // @name         YTScript
 // @description  YouTube player enhancement
 // @author       michi-at
-// @version      0.3.015
+// @version      0.3.103
 // @updateURL    https://raw.githubusercontent.com/michi-at/YTScript/master/YTScript.meta.js
 // @downloadURL  https://raw.githubusercontent.com/michi-at/YTScript/master/YTScript.user.js
 // @match        *://www.youtube.com/*
@@ -28,13 +28,19 @@
     document.head.appendChild(link);
 
 
+    
+    const GLOBAL_EVENTS = {
+        componentMessageSent: "ComponentMessageSent",
+        configSaved: "ConfigSaved",
+        navigationManagerLoaded: "NavigationManagerLoaded"
+    }
 
     class ComponentManager {
         constructor() {
             this.components = {};
             this.info = GM_info;
             this.config = this.LoadConfig();
-            this.events = {};
+            this.events = { };
         }
 
         LoadConfig() {
@@ -43,9 +49,9 @@
         }
 
         Initialize() {
-            for (const [, value] of Object.entries(this.events)) {
-                if (value.eventListener) {
-                    value.eventTarget.addEventListener(value.eventName, value.eventListener, value.useCapture);
+            for (const [, e] of Object.entries(this.events)) {
+                if (e.eventListener) {
+                    e.eventTarget.addEventListener(e.eventName, e.eventListener, e.useCapture);
                 }
             }
 
@@ -61,24 +67,30 @@
             this.config[component.name] = this.config[component.name] || {};
             component.LoadConfig(this.config[component.name]);
             component.index = Object.keys(this.components).length;
-            this.WatchComponentConfig(component);
+            this.RegisterComponentEvents(component);
 
             return this;
         }
 
-        WatchComponentConfig(component) {
+        RegisterComponentEvents(component) {
             this.events[component.name] = {
                 eventTarget: component,
-                eventName: component.events.onConfigSave.eventName,
-                eventListener: this.ComponentConfigSave.bind(this),
+                eventName: GLOBAL_EVENTS.componentMessageSent,
+                eventListener: this.ComponentMessageSent.bind(this),
                 useCapture: false
             }
         }
 
-        ComponentConfigSave(event) {
-            this.config[event.target.name] = event.detail;
-            this.components[event.target.name].LoadConfig(this.config[event.target.name]);
-            this.SaveConfig();
+        ComponentMessageSent(event) {
+            switch (event.detail.type) {
+                case GLOBAL_EVENTS.configSaved: {
+                    this.config[event.target.name] = event.detail.config;
+                    this.components[event.target.name].LoadConfig(this.config[event.target.name]);
+                    this.SaveConfig();
+
+                    break;
+                }
+            }
         }
 
         EditConfig(componentName, value) {
@@ -214,12 +226,6 @@
             this.name = this.constructor.name;
 
             this.events = {
-                onConfigSave: {
-                    eventTarget: this,
-                    eventName: "ConfigSaved",
-                    eventListener: null,
-                    useCapture: false
-                },
                 onLoad: {
                     eventTarget: document.documentElement,
                     eventName: "load",
@@ -243,6 +249,18 @@
                     eventName: "yt-navigate-finish",
                     eventListener: this.RunCallbackIfAllowed(this.YtNavigateFinished, this.IsComponentReady).bind(this),
                     useCapture: false
+                },
+                onNavigateStartToWatch: {
+                    eventTarget: this,
+                    eventName: "NavigateStartToWatch",
+                    eventListener: this.NavigateStartedToWatch.bind(this),
+                    useCapture: false
+                },
+                onNavigateStartToBrowse: {
+                    eventTarget: this,
+                    eventName: "NavigateStartToBrowse",
+                    eventListener: this.NavigateStartedToBrowse.bind(this),
+                    useCapture: false
                 }
             };
             this.status = {
@@ -257,13 +275,12 @@
                     if (typeof value === "boolean") {
                         this._isLoaded = value;
                         if (value) {
-                            this.parent.dispatchEvent(
-                                new CustomEvent(
-                                    this.parent.events.onListenerRemove.eventName, {
-                                        detail: this.parent.events.onLoad
-                                    }
-                                )
-                            );
+                            this.parent.dispatchEvent(new CustomEvent(
+                                this.parent.events.onListenerRemove.eventName,
+                                {
+                                    detail: this.parent.events.onLoad
+                                }
+                            ));
                         }
                     }
                 }
@@ -271,6 +288,10 @@
 
             this.UpdateLocation();
         }
+
+        NavigateStartedToWatch(event) { }
+
+        NavigateStartedToBrowse(event) { }
 
         Load() {
             this.status.isLoaded = true;
@@ -294,7 +315,18 @@
         }
 
         YtNavigateStarted(event) {
-            this.UpdateLocation();
+            if (event.detail.pageType === "watch") {
+                this.dispatchEvent(new CustomEvent(
+                    this.events.onNavigateStartToWatch.eventName,
+                    event
+                ));
+            }
+            else if (event.detail.pageType === "browse") {
+                this.dispatchEvent(new CustomEvent(
+                    this.events.onNavigateStartToBrowse.eventName,
+                    event
+                ));
+            }
         }
 
         YtNavigateFinished(event) {
@@ -353,8 +385,11 @@
         }
 
         SaveConfig(newConfig) {
-            let event = new CustomEvent(this.events.onConfigSave.eventName, {
-                detail: newConfig
+            let event = new CustomEvent(GLOBAL_EVENTS.componentMessageSent, {
+                detail: {
+                    type: GLOBAL_EVENTS.configSaved,
+                    config: newConfig
+                }
             });
             this.dispatchEvent(event);
         }
@@ -383,13 +418,12 @@
                     if (typeof value === "boolean") {
                         this._isUILoaded = value;
                         if (value) {
-                            this.parent.dispatchEvent(
-                                new CustomEvent(
-                                    this.parent.events.onListenerRemove.eventName, {
-                                        detail: this.parent.events.onUILoad
-                                    }
-                                )
-                            );
+                            this.parent.dispatchEvent(new CustomEvent(
+                                this.parent.events.onListenerRemove.eventName,
+                                {
+                                    detail: this.parent.events.onUILoad
+                                }
+                            ));
                         }
                     }
                 }
@@ -420,7 +454,7 @@
                 eventName: "click",
                 eventListener: this.MenuButtonClicked.bind(this),
                 useCapture: false
-            }
+            };
 
             this.container = document.createElement("div");
             this.container.className = "ytscript-container";
@@ -579,7 +613,7 @@
 
         CalculateContainerHeight() {
             this.container.renderedHeight = 0;
-            for (let elem of this.container.children) {
+            for (const elem of this.container.children) {
                 this.container.renderedHeight += elem.GetRenderedHeight();
             }
         }
@@ -615,12 +649,110 @@
         }
     }
 
-    class VolumeControl extends UIComponent {
+    class NavigationManagerHack extends Component {
+        constructor() {
+            super();
+
+            this.navigationHandlers = [];
+        }
+
+        Load() {
+            if (!this.navigationManager
+                && (this.navigationManager = document.querySelector("yt-navigation-manager")))
+            {
+                this.navigationManager.oldHandleNavigatePart = this.navigationManager.handleNavigatePart_;
+            }
+
+            if (this.navigationManager) {
+                window.dispatchEvent(new CustomEvent(
+                    GLOBAL_EVENTS.navigationManagerLoaded,
+                    {
+                        detail: {
+                            RegisterHandler: this.RegisterNavigationHandler.bind(this),
+                        }
+                    }
+                ));
+
+                this.status.isLoaded = true;
+            }
+        }
+
+        RegisterNavigationHandler(handler) {
+            this.navigationHandlers.push(handler);
+        }
+
+        NavigateStartedToBrowse(event) {
+            if (this.ParseValueFromUrl(event.detail.url, "list") !== ""
+                && this.ParseValueFromUrl(event.detail.url, "playnext") !== "")
+            {
+                const MainHandler = function () {
+                    for (let i = 0; i < arguments.length; ++i) {
+                        if (arguments[i].hasOwnProperty("url")) {
+                            let videoId = this.ParseValueFromUrl(arguments[i].url, "v");
+                            if (videoId !== "") {
+                                
+                                for (let j = 0; j < this.navigationHandlers.length; ++j) {
+                                    this.navigationHandlers[j](event, videoId);
+                                }
+        
+                                this.SetHandleNavigatePart();
+                                break;
+                            }
+                        }
+                    }
+                };
+                if (this.navigationHandlers.length > 0) {
+                    this.SetHandleNavigatePart(MainHandler);
+                }
+            }
+        }
+
+        SetHandleNavigatePart(callback) {
+            let old = this.navigationManager.oldHandleNavigatePart;
+            let control = this;
+            this.navigationManager.handleNavigatePart_ = function () {
+                old.apply(this, arguments);
+                callback && callback.apply(control, arguments);
+            }
+        }
+    }
+
+    class PlayerComponent extends UIComponent {
+        constructor() {
+            super();
+
+            this.events.onNavigationManagerLoaded = {
+                eventTarget: window,
+                eventName: GLOBAL_EVENTS.navigationManagerLoaded,
+                eventListener: this.NavigationManagerLoaded.bind(this),
+                useCapture: false
+            }
+        }
+
+        NavigateStartedToBrowse(event) {
+            if (this.ParseValueFromUrl(event.detail.url, "list") !== ""
+                && this.ParseValueFromUrl(event.detail.url, "playnext") !== "")
+            {
+                this.ProcessNavStartToBrowseImmediately(event);
+            }
+        }
+
+        NavigationManagerLoaded(event) {
+            event.detail.RegisterHandler && event.detail.RegisterHandler(this.ProcessNavStartToBrowse.bind(this));
+        }
+
+        ProcessNavStartToBrowseImmediately(event) { }
+        
+        ProcessNavStartToBrowse(event, videoId) { }
+    }
+
+    class VolumeControl extends PlayerComponent {
         constructor() {
             super();
 
             this.DEFAULT_VALUE = 1;
-            this.isProcessed = false;
+            this.status.isProcessed = false;
+            this.status.isVideoChanged = false;
         }
 
         Load() {
@@ -637,7 +769,7 @@
                 gainNode.connect(audioContext.destination);
                 source.connect(gainNode);
 
-                this.isProcessed = true;
+                this.status.isProcessed = true;
             }
 
             if (this.gain) {
@@ -722,26 +854,60 @@
             this.gain.value = ui.value;
         }
 
-        YtNavigateStarted(event) {
-            if (event.detail.pageType === "watch") {
-                this.location.videoId = this.ParseValueFromUrl(event.detail.url, "v");
-                this.Update(this.location.videoId);
-                this.isProcessed = true;
-            }
+        NavigateStartedToWatch(event) {
+            this.location.videoId = this.ParseValueFromUrl(event.detail.url, "v");
+            this.Update(this.location.videoId);
+            this.status.isProcessed = true;
         }
 
-        Update(videoId) {
-            this.UpdatePlayer(videoId);
-        }
-
-        UpdatePlayer(videoId) {
+        ProcessNavStartToBrowseImmediately(event) {
             const Callback = () => {
-                videoId && this.UpdateVolumeByVideoId(videoId)
-                        || this.UpdateVolume();
-                this.UpdateUI();
+                this.status.isVideoChanged = true;
+                
+                this.dispatchEvent(new CustomEvent(
+                    this.events.onListenerRemove.eventName,
+                    {
+                        detail: {
+                            eventTarget: this.videoElement,
+                            eventName: "durationchange",
+                            eventListener: Callback,
+                            useCapture: false
+                        }
+                    }
+                ));
+            };
+            this.videoElement.addEventListener("durationchange", Callback);
+        }
+
+        ProcessNavStartToBrowse(event, videoId) {
+            if (this.status.isVideoChanged) {
+                this.Update(videoId, this.SetVolumeAndUpdateUI.bind(this));
+            }
+            else {
+                this.Update(videoId);
+            }
+
+            this.status.isProcessed = true;
+            this.status.isVideoChanged = false;
+        }
+
+        Update(videoId, callback) {
+            this.UpdatePlayer(videoId, callback);
+        }
+
+        UpdatePlayer(videoId, cb) {
+            if (cb) {
+                cb(videoId);
+
+                return;
+            }
+
+            const Callback = () => {
+                this.SetVolumeAndUpdateUI(videoId);
 
                 this.dispatchEvent(new CustomEvent(
-                    this.events.onListenerRemove.eventName, {
+                    this.events.onListenerRemove.eventName,
+                    {
                         detail: {
                             eventTarget: this.videoElement,
                             eventName: "loadeddata",
@@ -754,16 +920,39 @@
             this.videoElement.addEventListener("loadeddata", Callback);
         }
 
+        SetVolumeAndUpdateUI(videoId) {
+            if (videoId) {
+                this.UpdateVolumeByVideoId(videoId);
+            }
+            else {
+                this.UpdateVolume();
+            }
+            this.UpdateUI();
+        }
+
         UpdateUI() {
             $(this.slider.api).slider("value", this.gain.value);
         }
 
         YtNavigateFinished(event) {
-            this.UpdateUI();
-            if (!this.isProcessed) {
-                this.Update();
+            if (event.detail.pageType === "watch") {
+                this.UpdateUI();
+                if (!this.status.isProcessed) {
+                    this.Update();
+                }
+
+                this.status.isProcessed = false;
             }
-            this.isProcessed = false;
+            else if (event.detail.pageType === "browse") {
+                const url = event.detail.endpoint.commandMetadata.webCommandMetadata.url;
+                if (this.ParseValueFromUrl(url, "list") !== ""
+                    && this.ParseValueFromUrl(url, "playnext") !== "")
+                {
+                    this.Update();
+
+                    this.status.isProcessed = false;
+                }
+            }
         }
 
         LoadConfig(data) {
@@ -778,12 +967,13 @@
         }
     }
 
-    class TrimControl extends UIComponent {
+    class TrimControl extends PlayerComponent {
         constructor() {
             super();
 
             this.DEFAULT_VALUE = [0, 100];
-            this.isProcessed = false;
+            this.status.isProcessed = false;
+            this.status.isVideoChanged = false;
             this.epsilon = 0.0001;
         }
 
@@ -794,7 +984,7 @@
                 this.UpdateTrimIntervalByVideoId(this.location.videoId);
                 if (this.trimInterval) {
                     this.player.seekTo(this.trimInterval[0]);
-                    this.isProcessed = true;
+                    this.status.isProcessed = true;
                 }
             }
 
@@ -803,7 +993,9 @@
             if (this.player && this.videoElement) {
                 this.videoElement.addEventListener("durationchange", () => {
                     this.InitLinearFit();
+                    this.status.isUILoaded && this.UpdateUI();
                 });
+                this.InitLinearFit();
                 
                 this.WatchVideoProgress();
 
@@ -812,14 +1004,15 @@
         }
 
         InitLinearFit() {
+            const duration = this.videoElement.getDuration();
             this.LinearFit = Utils.LinearInterpolation(this.DEFAULT_VALUE[0], 0,
-                                                       this.DEFAULT_VALUE[1], this.videoElement.getDuration());
+                                                       this.DEFAULT_VALUE[1], duration);
             this.InverseLinearFit = Utils.LinearInterpolation(0, this.DEFAULT_VALUE[0],
-                                                       this.videoElement.getDuration(), this.DEFAULT_VALUE[1]);
+                                                       duration, this.DEFAULT_VALUE[1]);
         }
 
         WatchVideoProgress() {
-            requestAnimationFrame(this.OnVideoProgress.bind(this));
+            requestIdleCallback(this.OnVideoProgress.bind(this), { timeOut: 100 });
         }
 
         OnVideoProgress() {
@@ -939,51 +1132,137 @@
             this.SaveConfig(this.config);
         }
 
-        YtNavigateStarted(event) {
-            if (event.detail.pageType === "watch") {
-                this.location.videoId = this.ParseValueFromUrl(event.detail.url, "v");
-                this.Update(this.location.videoId);
-                this.isProcessed = true;
-            }
+        NavigateStartedToWatch(event) {
+            this.location.videoId = this.ParseValueFromUrl(event.detail.url, "v");
+            this.Update(this.location.videoId);
+            this.status.isProcessed = true;
         }
 
-        Update(videoId) {
-            videoId && this.UpdateTrimIntervalByVideoId(videoId)
-                    || !videoId && this.UpdateTrimInterval();
-            this.trimInterval && this.UpdatePlayer();
-            this.UpdateUI();
-        }
-
-        UpdatePlayer() {
+        ProcessNavStartToBrowseImmediately(event) {
             const Callback = () => {
-                this.trimInterval && this.player.seekTo(this.trimInterval[0]);
+                this.player.pauseVideo();
+                this.status.isVideoChanged = true;
                 
                 this.dispatchEvent(new CustomEvent(
-                    this.events.onListenerRemove.eventName, {
+                    this.events.onListenerRemove.eventName,
+                    {
                         detail: {
                             eventTarget: this.videoElement,
-                            eventName: "loadedmetadata",
+                            eventName: "durationchange",
                             eventListener: Callback,
                             useCapture: false
                         }
                     }
                 ));
             };
-            this.videoElement.addEventListener("loadedmetadata", Callback);
+            this.videoElement.addEventListener("durationchange", Callback);
         }
 
+        ProcessNavStartToBrowse(event, videoId) {
+            if (this.status.isVideoChanged) {
+                this.Update(videoId, this.SeekAndPlay.bind(this));
+            }
+            else {
+                this.Update(videoId);
+            }
+
+            this.status.isProcessed = true;
+            this.status.isVideoChanged = false;
+        }
+
+        Update(videoId, callback) {
+            if (videoId) {
+                this.UpdateTrimIntervalByVideoId(videoId);
+            }
+            else {
+                this.UpdateTrimInterval();
+            }
+            this.UpdatePlayer(callback);
+            this.UpdateUI();
+        }
+        
+        UpdatePlayer(cb) {
+            if (cb) {
+                cb();
+
+                return;
+            }
+            
+            const events = [
+                {
+                    eventTarget: this.videoElement,
+                    eventName: "durationchange",
+                    useCapture: false
+                },
+                {
+                    eventTarget: this.videoElement,
+                    eventName: "loadedmetadata",
+                    useCapture: false
+                },
+                {
+                    eventTarget: this.videoElement,
+                    eventName: "loadeddata",
+                    useCapture: false
+                }
+            ];
+            
+            const Callback = () => {
+                this.SeekAndPlay();
+
+                for (const k of events) {
+                    const { eventTarget, eventName, useCapture } = k;
+                    
+                    this.dispatchEvent(new CustomEvent(
+                        this.events.onListenerRemove.eventName,
+                        {
+                            detail: {
+                                eventTarget: eventTarget,
+                                eventName: eventName,
+                                eventListener: Callback,
+                                useCapture: useCapture
+                            }
+                        }
+                    ));
+                }
+            };
+            
+            for (const k of events) {
+                const { eventTarget, eventName, useCapture } = k;
+                eventTarget.addEventListener(eventName, Callback, useCapture);
+            }
+        }
+        
+        SeekAndPlay() {
+            this.trimInterval && this.player.seekTo(this.trimInterval[0]);
+            this.player.playVideo();
+        }
+        
         UpdateUI() {
+            this.InitLinearFit();
             let interval = this.GetInversedTrimInterval();
             $(this.slider.api).slider("values", interval)
             this.SetHandles(interval);
         }
 
         YtNavigateFinished(event) {
-            this.UpdateUI();
-            if (!this.isProcessed) {
-                this.Update();
+            if (event.detail.pageType === "watch") {
+                this.UpdateUI();
+                if (!this.status.isProcessed) {
+                    this.Update();
+                }
+
+                this.status.isProcessed = false;
             }
-            this.isProcessed = false;
+            else if (event.detail.pageType === "browse") {
+                const url = event.detail.endpoint.commandMetadata.webCommandMetadata.url;
+                if (this.ParseValueFromUrl(url, "list") !== ""
+                    && this.ParseValueFromUrl(url, "playnext") !== "")
+                {
+                    this.Update();
+
+                    this.status.isProcessed = false;
+                }
+            }
         }
 
         LoadConfig(data) {
@@ -1036,7 +1315,8 @@
 
 
 
-    manager.AddComponent(new ComponentPanel())
+    manager.AddComponent(new NavigationManagerHack())
+           .AddComponent(new ComponentPanel())
            .AddComponent(new TrimControl())
            .AddComponent(new VolumeControl())
            .AddComponent(new ScrollToCurrentVideoFix())
