@@ -1,7 +1,7 @@
 # :heartpulse: YTScript :heartpulse:
 YouTube player enhancement (Google Chrome+Tampermonkey extension).
 
-![](https://michi-at.github.io/img/ytscript.gif)
+![YTScript](https://michi-at.github.io/img/yts.gif)
 
 ## :sparkles: Features :sparkles:
 - [x] Custom volume for each video :satisfied:
