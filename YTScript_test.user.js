@@ -28,6 +28,7 @@
     document.head.appendChild(link);
 
 
+    
     const GLOBAL_EVENTS = {
         componentMessageSent: "ComponentMessageSent",
         configSaved: "ConfigSaved",
