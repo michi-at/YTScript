@@ -6,4 +6,4 @@ YouTube player enhancement (Google Chrome+Tampermonkey extension).
 ## :sparkles: Features :sparkles:
 - [x] Custom volume for each video :satisfied:
 - [x] Video start/end points with slider (trim a video) :satisfied:
-- [x] Scroll to current playlist video fix :satisfied:
+- [x] Scroll to current video fix (playlist bug) :satisfied:
